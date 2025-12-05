@@ -33,7 +33,7 @@ export function GalleryListClient({
     // Find the photo element and scroll to it
     const photoElement = document.querySelector(`[data-photo-id="${photoId}"]`);
     if (photoElement) {
-      const headerHeight = 56; // 14 * 4 = 56px (h-14)
+      const headerHeight = 48; // 12 * 4 = 48px (h-12)
       const rect = photoElement.getBoundingClientRect();
       const absoluteTop = window.scrollY + rect.top - headerHeight - 16; // 16px padding
 
@@ -53,8 +53,14 @@ export function GalleryListClient({
         onJumpToPhoto={handleJumpToPhoto}
       />
 
-      {/* Photo grid with left margin for time axis on desktop */}
-      <div className="px-4 pb-20 md:pl-16 md:pr-4">
+      {/* Photo grid container - centered with max-width */}
+      <div
+        className="mx-auto pb-20"
+        style={{
+          maxWidth: "calc(var(--grid-width) + 2 * var(--grid-container-inline-padding))",
+          paddingInline: "var(--grid-container-inline-padding)",
+        }}
+      >
         <PhotoGrid
           initialPhotos={initialPhotos}
           initialCursor={initialCursor}
@@ -73,4 +79,3 @@ export function GalleryListClient({
     </div>
   );
 }
-

@@ -14,8 +14,9 @@ export default function GalleryLayout({
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <GalleryHeader />
-      <main className="pt-14">{children}</main>
+      <main className="pt-12">{children}</main>
     </div>
   );
 }
+
 

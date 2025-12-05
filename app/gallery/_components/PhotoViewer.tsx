@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { BlurhashImage } from "./BlurhashImage";
 import { Button } from "@heroui/react";
 
@@ -10,23 +11,43 @@ interface PhotoViewerProps {
   width: number;
   height: number;
   blurhash?: string | null;
+  prevPhotoId?: string | null;
+  nextPhotoId?: string | null;
 }
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
-const ZOOM_STEP = 0.5;
+const ZOOM_LEVEL = 2; // Fixed zoom level for click-to-zoom
 
 /**
- * Photo viewer with zoom, pan, and fullscreen capabilities
+ * Photo viewer with click-to-zoom, pan, fullscreen, and prev/next navigation
+ * Mouse wheel scrolls the page, not the zoom
  */
-export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerProps) {
+export function PhotoViewer({
+  src,
+  alt,
+  width,
+  height,
+  blurhash,
+  prevPhotoId,
+  nextPhotoId,
+}: PhotoViewerProps) {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(MIN_ZOOM);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false); // Ref for immediate drag state
+  const hasDraggedRef = useRef(false); // Track if user actually dragged (moved > threshold)
+  const dragStartPosRef = useRef({ x: 0, y: 0 }); // Track initial mouse position for threshold
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
+  const DRAG_THRESHOLD = 5; // Minimum pixels to move before considering it a drag
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showPrevArrow, setShowPrevArrow] = useState(false);
+  const [showNextArrow, setShowNextArrow] = useState(false);
 
   // Reset zoom and pan when image changes
   useEffect(() => {
@@ -35,17 +56,58 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
     setIsLoaded(false);
   }, [src]);
 
-  // Handle double click to toggle zoom
-  const handleDoubleClick = useCallback(
+  // Clamp pan values to prevent showing empty space
+  const clampPan = useCallback(
+    (newPan: { x: number; y: number }, currentZoom: number) => {
+      if (currentZoom <= MIN_ZOOM) {
+        return { x: 0, y: 0 };
+      }
+
+      const container = containerRef.current;
+      const image = imageRef.current;
+      if (!container || !image) return newPan;
+
+      const containerRect = container.getBoundingClientRect();
+      const imageRect = image.getBoundingClientRect();
+
+      // Calculate the actual rendered image size (scaled)
+      const scaledWidth = imageRect.width;
+      const scaledHeight = imageRect.height;
+
+      // Calculate max pan values (how far we can move before showing empty space)
+      const maxPanX = Math.max(0, (scaledWidth - containerRect.width) / 2);
+      const maxPanY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+
+      return {
+        x: Math.max(-maxPanX, Math.min(maxPanX, newPan.x)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, newPan.y)),
+      };
+    },
+    []
+  );
+
+  // Handle single click to toggle zoom
+  const handleClick = useCallback(
     (e: React.MouseEvent) => {
+      // Don't zoom if we were dragging (check the ref for actual drag)
+      if (hasDraggedRef.current) {
+        hasDraggedRef.current = false;
+        return;
+      }
+
+      // Don't zoom if clicking navigation zones
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-nav-zone]")) return;
+
       if (zoom === MIN_ZOOM) {
         // Zoom in centered on click position
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
           const x = e.clientX - rect.left - rect.width / 2;
           const y = e.clientY - rect.top - rect.height / 2;
-          setZoom(2);
-          setPan({ x: -x * 0.5, y: -y * 0.5 });
+          const newPan = { x: -x * (ZOOM_LEVEL - 1), y: -y * (ZOOM_LEVEL - 1) };
+          setZoom(ZOOM_LEVEL);
+          setPan(clampPan(newPan, ZOOM_LEVEL));
         }
       } else {
         // Reset to fit
@@ -53,42 +115,26 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
         setPan({ x: 0, y: 0 });
       }
     },
-    [zoom]
-  );
-
-  // Handle mouse wheel zoom
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-
-      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
-
-      if (newZoom !== zoom) {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (rect) {
-          // Zoom centered on mouse position
-          const mouseX = e.clientX - rect.left - rect.width / 2;
-          const mouseY = e.clientY - rect.top - rect.height / 2;
-
-          const zoomRatio = newZoom / zoom;
-          const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
-          const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
-
-          setZoom(newZoom);
-          setPan({ x: newPanX, y: newPanY });
-        }
-      }
-    },
-    [zoom, pan]
+    [zoom, clampPan]
   );
 
   // Handle drag to pan
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      // Don't start drag on navigation zones
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-nav-zone]")) return;
+
+      // Only respond to left mouse button
+      if (e.button !== 0) return;
+
       if (zoom > MIN_ZOOM) {
+        isDraggingRef.current = true;
+        hasDraggedRef.current = false;
+        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         setIsDragging(true);
         setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+        e.preventDefault(); // Prevent text selection
       }
     },
     [zoom, pan]
@@ -96,17 +142,37 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (isDragging) {
-        setPan({
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y,
-        });
+      // Check if left mouse button is actually pressed (buttons bitmask: 1 = left button)
+      if (!isDraggingRef.current || (e.buttons & 1) === 0) {
+        // Mouse button is not pressed, stop dragging
+        if (isDraggingRef.current) {
+          isDraggingRef.current = false;
+          setIsDragging(false);
+        }
+        return;
       }
+
+      // Check if we've moved past the drag threshold
+      const dx = e.clientX - dragStartPosRef.current.x;
+      const dy = e.clientY - dragStartPosRef.current.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance >= DRAG_THRESHOLD) {
+        hasDraggedRef.current = true;
+      }
+
+      const newPan = {
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      };
+      setPan(clampPan(newPan, zoom));
     },
-    [isDragging, dragStart]
+    [dragStart, zoom, clampPan]
   );
 
   const handleMouseUp = useCallback(() => {
+    // Immediately stop dragging
+    isDraggingRef.current = false;
     setIsDragging(false);
   }, []);
 
@@ -121,7 +187,7 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
           y: e.touches[0].clientY - pan.y,
         };
       } else if (e.touches.length === 2) {
-        // Pinch zoom
+        // Pinch zoom (still allowed on touch)
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         touchStartRef.current = {
@@ -138,10 +204,11 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
     (e: React.TouchEvent) => {
       if (e.touches.length === 1 && touchStartRef.current && !touchStartRef.current.distance) {
         if (zoom > MIN_ZOOM) {
-          setPan({
+          const newPan = {
             x: e.touches[0].clientX - touchStartRef.current.x,
             y: e.touches[0].clientY - touchStartRef.current.y,
-          });
+          };
+          setPan(clampPan(newPan, zoom));
         }
       } else if (e.touches.length === 2 && touchStartRef.current?.distance) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -154,7 +221,7 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
         touchStartRef.current.distance = distance;
       }
     },
-    [zoom]
+    [zoom, clampPan]
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -184,6 +251,19 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
     };
   }, []);
 
+  // Navigation handlers
+  const navigateToPrev = useCallback(() => {
+    if (prevPhotoId) {
+      router.push(`/gallery/${prevPhotoId}`);
+    }
+  }, [prevPhotoId, router]);
+
+  const navigateToNext = useCallback(() => {
+    if (nextPhotoId) {
+      router.push(`/gallery/${nextPhotoId}`);
+    }
+  }, [nextPhotoId, router]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -191,13 +271,13 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
         document.exitFullscreen();
       } else if (e.key === "f" || e.key === "F") {
         toggleFullscreen();
-      } else if (e.key === "+" || e.key === "=") {
-        setZoom((z) => Math.min(MAX_ZOOM, z + ZOOM_STEP));
-      } else if (e.key === "-") {
-        setZoom((z) => Math.max(MIN_ZOOM, z - ZOOM_STEP));
       } else if (e.key === "0") {
         setZoom(MIN_ZOOM);
         setPan({ x: 0, y: 0 });
+      } else if (e.key === "ArrowLeft") {
+        navigateToPrev();
+      } else if (e.key === "ArrowRight") {
+        navigateToNext();
       }
     };
 
@@ -205,23 +285,22 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isFullscreen, toggleFullscreen]);
+  }, [isFullscreen, toggleFullscreen, navigateToPrev, navigateToNext]);
 
   return (
     <div
       ref={containerRef}
       className={`
-        relative flex items-center justify-center overflow-hidden
+        relative flex items-center justify-center overflow-hidden select-none
         ${isFullscreen ? "bg-black" : "bg-zinc-100 dark:bg-zinc-900"}
         ${zoom > MIN_ZOOM ? "cursor-grab" : "cursor-zoom-in"}
         ${isDragging ? "cursor-grabbing" : ""}
       `}
       style={{
-        height: isFullscreen ? "100vh" : "calc(100vh - 200px)",
+        height: isFullscreen ? "100vh" : "100%",
         minHeight: "400px",
       }}
-      onDoubleClick={handleDoubleClick}
-      onWheel={handleWheel}
+      onClick={handleClick}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -230,8 +309,81 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Previous navigation zone - fixed position starting below header */}
+      {prevPhotoId && (
+        <div
+          data-nav-zone="prev"
+          className={`${isFullscreen ? "absolute top-0" : "fixed"} left-0 bottom-0 flex w-20 cursor-pointer items-center justify-center transition-opacity`}
+          style={isFullscreen ? undefined : { top: "48px" }}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigateToPrev();
+          }}
+          onMouseEnter={() => setShowPrevArrow(true)}
+          onMouseLeave={() => setShowPrevArrow(false)}
+        >
+          <div
+            className={`
+              rounded-full bg-black/40 p-2 backdrop-blur-sm transition-opacity duration-200
+              ${showPrevArrow ? "opacity-100" : "opacity-0"}
+            `}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Next navigation zone - fixed position starting below header */}
+      {nextPhotoId && (
+        <div
+          data-nav-zone="next"
+          className={`${isFullscreen ? "absolute top-0" : "fixed"} right-0 bottom-0 flex w-20 cursor-pointer items-center justify-center transition-opacity`}
+          style={isFullscreen ? undefined : { top: "48px" }}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigateToNext();
+          }}
+          onMouseEnter={() => setShowNextArrow(true)}
+          onMouseLeave={() => setShowNextArrow(false)}
+        >
+          <div
+            className={`
+              rounded-full bg-black/40 p-2 backdrop-blur-sm transition-opacity duration-200
+              ${showNextArrow ? "opacity-100" : "opacity-0"}
+            `}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+        </div>
+      )}
+
       {/* Image container */}
       <div
+        ref={imageRef}
         className="relative transition-transform duration-100"
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
@@ -252,13 +404,14 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
       </div>
 
       {/* Fullscreen button */}
-      <div className="absolute bottom-4 right-4 flex gap-2">
+      <div className="absolute bottom-4 right-4 z-20 flex gap-2">
         {zoom > MIN_ZOOM && (
           <Button
             size="sm"
             variant="flat"
             className="bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setZoom(MIN_ZOOM);
               setPan({ x: 0, y: 0 });
             }}
@@ -270,7 +423,10 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
           size="sm"
           variant="flat"
           className="bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
-          onClick={toggleFullscreen}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFullscreen();
+          }}
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         >
           {isFullscreen ? (
@@ -307,11 +463,10 @@ export function PhotoViewer({ src, alt, width, height, blurhash }: PhotoViewerPr
 
       {/* Zoom indicator */}
       {zoom > MIN_ZOOM && (
-        <div className="absolute left-4 bottom-4 rounded-md bg-black/50 px-2 py-1 text-sm text-white backdrop-blur-sm">
+        <div className="absolute left-4 bottom-4 z-20 rounded-md bg-black/50 px-2 py-1 text-sm text-white backdrop-blur-sm">
           {Math.round(zoom * 100)}%
         </div>
       )}
     </div>
   );
 }
-

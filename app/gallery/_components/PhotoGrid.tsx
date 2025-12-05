@@ -187,9 +187,9 @@ export function PhotoGrid({
   return (
     <div ref={gridRef} className="w-full">
       {/* Masonry grid using CSS columns */}
-      <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
+      <div className="columns-1 gap-5 sm:columns-2 md:columns-3">
         {photos.map((photo, index) => (
-          <div key={photo.id} className="mb-4 break-inside-avoid">
+          <div key={photo.id} className="mb-5 break-inside-avoid">
             <PhotoCard
               photo={photo}
               priority={index < 8}

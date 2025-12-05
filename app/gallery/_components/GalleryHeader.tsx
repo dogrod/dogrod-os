@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@heroui/react";
 
 export function GalleryHeader() {
   const pathname = usePathname();
@@ -11,6 +12,7 @@ export function GalleryHeader() {
   const isDetailPage = pathname !== "/gallery" && pathname.startsWith("/gallery/");
 
   const handleLogoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isDetailPage) {
       // On detail page, navigate back to gallery list
       e.preventDefault();
@@ -23,26 +25,56 @@ export function GalleryHeader() {
     // On list page, do nothing (keeps state)
   };
 
+  const handleClose = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/gallery");
+    }
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">
-      <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 z-[100] h-12">
+      <div className="flex h-full items-center justify-between px-4">
         {/* Left: Logo/Title */}
         <Link
           href="/gallery"
           onClick={handleLogoClick}
-          className="flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
+          className="flex items-center gap-2 text-base font-semibold tracking-tight text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
         >
           <span className="text-zinc-400 dark:text-zinc-500">dogrodOS</span>
           <span className="text-zinc-300 dark:text-zinc-600">|</span>
           <span>Gallery</span>
         </Link>
 
-        {/* Right: Reserved space for future module switcher */}
-        <div className="flex items-center gap-2">
-          {/* Placeholder for future controls */}
+        {/* Right: Close button on detail page */}
+        <div className="flex items-center">
+          {isDetailPage && (
+            <Button
+              isIconOnly
+              variant="light"
+              size="sm"
+              className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              onPress={handleClose}
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
         </div>
       </div>
     </header>
   );
 }
-

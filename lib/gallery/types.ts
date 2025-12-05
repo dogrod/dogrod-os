@@ -188,3 +188,5 @@ export function formatPhotoDate(photo: Photo): string {
   return date.toISOString().split("T")[0]; // YYYY-MM-DD
 }
 
+
+

@@ -64,3 +64,5 @@ export function PhotoCard({ photo, priority = false, onNavigate }: PhotoCardProp
   );
 }
 
+
+

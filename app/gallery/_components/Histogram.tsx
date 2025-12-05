@@ -180,3 +180,5 @@ export function Histogram({ histogram }: HistogramProps) {
   );
 }
 
+
+

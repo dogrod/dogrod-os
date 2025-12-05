@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Tooltip } from "@heroui/react";
 import type { TimeAxisData, TimeAxisTick } from "@/lib/gallery/types";
-import { formatMonth, formatMonthFull } from "@/lib/gallery/utils";
+import { formatMonthFull } from "@/lib/gallery/utils";
 
 interface TimeAxisProps {
   data: TimeAxisData;
@@ -14,6 +14,7 @@ interface TimeAxisProps {
 /**
  * Desktop vertical time axis for gallery navigation
  * Shows years and months for the current year
+ * Uses horizontal line segments as tick indicators
  */
 export function TimeAxis({ data, currentDate, onJumpToPhoto }: TimeAxisProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
@@ -117,39 +118,45 @@ export function TimeAxis({ data, currentDate, onJumpToPhoto }: TimeAxisProps) {
   return (
     <div
       ref={axisRef}
-      className="fixed left-0 top-14 bottom-0 z-40 hidden w-14 flex-col items-center py-8 md:flex"
+      className="fixed left-0 top-12 bottom-0 z-40 hidden w-16 flex-col items-center py-8 md:flex"
       role="navigation"
       aria-label="Time navigation"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onFocus={() => focusedIndex < 0 && setFocusedIndex(0)}
     >
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-end gap-3 pr-2">
         {allTicks.map((tick, index) => {
           const tickKey = tick.type === "year" ? `y-${tick.year}` : `m-${tick.year}-${tick.month}`;
           const isActive = isTickActive(tick);
           const isFocused = index === focusedIndex;
-          const isMonth = tick.type === "month";
+          const isYear = tick.type === "year";
 
           return (
             <Tooltip
               key={tickKey}
-              content={getTickLabel(tick)}
+              content={
+                <span className="text-xs text-zinc-700 dark:text-zinc-300">
+                  {getTickLabel(tick)}
+                </span>
+              }
               placement="right"
               delay={0}
               closeDelay={0}
               isOpen={hoveredTick === tickKey || isFocused}
+              classNames={{
+                content: "bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded shadow-sm",
+              }}
             >
               <button
                 className={`
-                  relative transition-all duration-150
-                  ${isMonth ? "h-3 w-3" : "h-4 w-4"}
+                  relative transition-all duration-150 rounded-full
+                  ${isYear ? "h-1" : "h-0.5"}
                   ${
                     isActive
-                      ? "bg-zinc-900 dark:bg-zinc-100"
-                      : "bg-zinc-300 hover:bg-zinc-400 dark:bg-zinc-600 dark:hover:bg-zinc-500"
+                      ? "w-8 bg-zinc-600 dark:bg-zinc-300"
+                      : "w-6 bg-zinc-300 hover:bg-zinc-400 dark:bg-zinc-600 dark:hover:bg-zinc-500"
                   }
-                  ${isMonth ? "rounded-sm" : "rounded-full"}
                   ${isFocused ? "ring-2 ring-blue-500 ring-offset-2" : ""}
                 `}
                 onClick={() => handleTickClick(tick)}
@@ -165,4 +172,3 @@ export function TimeAxis({ data, currentDate, onJumpToPhoto }: TimeAxisProps) {
     </div>
   );
 }
-

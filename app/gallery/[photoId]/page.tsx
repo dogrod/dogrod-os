@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPhotoById } from "@/lib/gallery/queries";
+import { getPhotoById, getAdjacentPhotos } from "@/lib/gallery/queries";
 import { PhotoDetailClient } from "../_components/PhotoDetailClient";
 import type { Metadata } from "next";
 
@@ -48,10 +48,22 @@ export default async function PhotoDetailPage({ params }: PhotoDetailPageProps) 
       notFound();
     }
 
-    return <PhotoDetailClient photo={photo} />;
+    // Fetch adjacent photos for navigation
+    const adjacentPhotos = await getAdjacentPhotos(
+      photo.id,
+      photo.captured_at,
+      photo.uploaded_at
+    );
+
+    return (
+      <PhotoDetailClient
+        photo={photo}
+        prevPhotoId={adjacentPhotos.prev}
+        nextPhotoId={adjacentPhotos.next}
+      />
+    );
   } catch (error) {
     console.error("Failed to load photo:", error);
     notFound();
   }
 }
-

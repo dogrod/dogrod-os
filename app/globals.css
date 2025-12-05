@@ -7,6 +7,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Gallery grid layout */
+  --grid-width: 1296px;
+  --grid-container-inline-padding: 24px;
 }
 
 @theme inline {

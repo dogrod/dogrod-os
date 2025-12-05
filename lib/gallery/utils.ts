@@ -94,7 +94,8 @@ export function formatDevice(
 
   // Add lens if available
   if (lens) {
-    const cleanedLens = cleanLensName(lens);
+    // Pass both make and model to remove duplicates from lens name
+    const cleanedLens = cleanLensName(lens, make, model);
     if (cleanedLens) parts.push(cleanedLens);
   }
 
@@ -117,13 +118,35 @@ function cleanCameraName(name: string): string {
 
 /**
  * Clean up lens model names for better display
+ * Removes camera make/model prefix if present in lens name
  */
-function cleanLensName(name: string): string {
-  return name
+function cleanLensName(name: string, cameraMake?: string | null, cameraModel?: string | null): string {
+  let cleaned = name;
+  
+  // Remove camera model from lens name if it starts with it (e.g., "iPhone 13 Pro back camera" -> "back camera")
+  if (cameraModel) {
+    const modelRegex = new RegExp(`^${escapeRegex(cameraModel)}\\s*`, "i");
+    cleaned = cleaned.replace(modelRegex, "");
+  }
+  
+  // Remove camera make prefix from lens name if it starts with it
+  if (cameraMake) {
+    const makeRegex = new RegExp(`^${escapeRegex(cameraMake)}\\s*`, "i");
+    cleaned = cleaned.replace(makeRegex, "");
+  }
+  
+  return cleaned
     .replace(/^E\s+/i, "")
     .replace(/\s+OSS$/i, "")
     .replace(/\s+G$/i, " G")
     .trim();
+}
+
+/**
+ * Escape special regex characters in a string
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -213,4 +236,6 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
     }
   };
 }
+
+
 

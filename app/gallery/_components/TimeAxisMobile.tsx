@@ -13,6 +13,7 @@ interface TimeAxisMobileProps {
 /**
  * Mobile horizontal time axis for gallery navigation
  * Shows recent months as a swipeable horizontal bar
+ * Uses softer colors to match desktop time axis style
  */
 export function TimeAxisMobile({ data, currentDate, onJumpToPhoto }: TimeAxisMobileProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -88,10 +89,10 @@ export function TimeAxisMobile({ data, currentDate, onJumpToPhoto }: TimeAxisMob
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white/90 backdrop-blur-md md:hidden dark:border-zinc-800 dark:bg-zinc-950/90">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md md:hidden dark:bg-zinc-950/90">
       <div
         ref={scrollRef}
-        className="flex gap-1 overflow-x-auto px-4 py-3 scrollbar-hide"
+        className="flex gap-1.5 overflow-x-auto px-4 py-3 scrollbar-hide"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -105,11 +106,11 @@ export function TimeAxisMobile({ data, currentDate, onJumpToPhoto }: TimeAxisMob
             <button
               key={`${tick.year}-${tick.month || "y"}`}
               className={`
-                flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-all
+                flex-shrink-0 rounded-full px-3 py-1.5 text-sm transition-all
                 ${
                   isActive
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                    ? "bg-zinc-600 text-white dark:bg-zinc-300 dark:text-zinc-900 font-medium"
+                    : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                 }
                 ${isYear ? "font-semibold" : ""}
               `}
@@ -128,4 +129,3 @@ export function TimeAxisMobile({ data, currentDate, onJumpToPhoto }: TimeAxisMob
     </div>
   );
 }
-
