@@ -46,7 +46,7 @@ export function GalleryListClient({
 
   return (
     <div className="relative">
-      {/* Desktop time axis */}
+      {/* Desktop time axis - fixed positioned, aligned with grid */}
       <TimeAxis
         data={timeAxisData}
         currentDate={currentDate}

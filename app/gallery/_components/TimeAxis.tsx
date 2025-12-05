@@ -1,9 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { Tooltip } from "@heroui/react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import type { TimeAxisData, TimeAxisTick } from "@/lib/gallery/types";
-import { formatMonthFull } from "@/lib/gallery/utils";
 
 interface TimeAxisProps {
   data: TimeAxisData;
@@ -13,30 +11,52 @@ interface TimeAxisProps {
 
 /**
  * Desktop vertical time axis for gallery navigation
- * Shows years and months for the current year
- * Uses horizontal line segments as tick indicators
+ * Shows years only as horizontal line segments
+ * Positioned to align horizontally with the waterfall grid
+ * Hidden on narrow screens (below lg breakpoint)
+ * Vertically centered in the viewport
  */
 export function TimeAxis({ data, currentDate, onJumpToPhoto }: TimeAxisProps) {
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [hoveredTick, setHoveredTick] = useState<string | null>(null);
+  const [leftPosition, setLeftPosition] = useState<number | null>(null);
   const axisRef = useRef<HTMLDivElement>(null);
 
-  // Get current year and month from the current date
-  const currentYearMonth = currentDate
-    ? (() => {
-        const date = new Date(currentDate);
-        return {
-          year: date.getFullYear(),
-          month: date.getMonth() + 1,
-        };
-      })()
+  // Get current year from the current date
+  const currentYear = currentDate
+    ? new Date(currentDate).getFullYear()
     : null;
 
-  // All ticks: years + current year months
-  const allTicks: (TimeAxisTick & { type: "year" | "month" })[] = [
-    ...data.currentYearMonths.map((t) => ({ ...t, type: "month" as const })),
-    ...data.years.map((t) => ({ ...t, type: "year" as const })),
-  ];
+  // Only show years (not months)
+  const yearTicks = data.years;
+
+  // Calculate left position based on grid container
+  useEffect(() => {
+    const calculatePosition = () => {
+      // Get the grid width from CSS variable
+      const gridWidth = 1296; // --grid-width
+      const gridPadding = 48; // --grid-container-inline-padding
+      const totalGridWidth = gridWidth + 2 * gridPadding;
+      
+      const viewportWidth = window.innerWidth;
+      
+      // Calculate where the grid starts
+      const gridLeft = Math.max(0, (viewportWidth - totalGridWidth) / 2);
+      
+      // Position time axis to the left of the grid with some gap
+      const axisPosition = gridLeft - 8; // 8px gap from grid edge
+      
+      // Only show if there's enough space (at least 48px for the axis)
+      if (axisPosition >= 48) {
+        setLeftPosition(axisPosition);
+      } else {
+        setLeftPosition(null);
+      }
+    };
+
+    calculatePosition();
+    window.addEventListener("resize", calculatePosition);
+    return () => window.removeEventListener("resize", calculatePosition);
+  }, []);
 
   const handleTickClick = useCallback(
     (tick: TimeAxisTick) => {
@@ -45,127 +65,52 @@ export function TimeAxis({ data, currentDate, onJumpToPhoto }: TimeAxisProps) {
     [onJumpToPhoto]
   );
 
-  // Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (allTicks.length === 0) return;
-
-      let newIndex = focusedIndex;
-
-      switch (e.key) {
-        case "ArrowUp":
-          e.preventDefault();
-          newIndex = Math.max(0, focusedIndex - 1);
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          newIndex = Math.min(allTicks.length - 1, focusedIndex + 1);
-          break;
-        case "Enter":
-        case " ":
-          e.preventDefault();
-          if (focusedIndex >= 0 && focusedIndex < allTicks.length) {
-            handleTickClick(allTicks[focusedIndex]);
-          }
-          break;
-        case "Home":
-          e.preventDefault();
-          newIndex = 0;
-          break;
-        case "End":
-          e.preventDefault();
-          newIndex = allTicks.length - 1;
-          break;
-        default:
-          return;
-      }
-
-      setFocusedIndex(newIndex);
-    },
-    [allTicks, focusedIndex, handleTickClick]
-  );
-
-  const isTickActive = (tick: TimeAxisTick & { type: "year" | "month" }) => {
-    if (!currentYearMonth) return false;
-
-    if (tick.type === "year") {
-      return tick.year === currentYearMonth.year;
-    } else {
-      return tick.year === currentYearMonth.year && tick.month === currentYearMonth.month;
-    }
-  };
-
-  const getTickLabel = (tick: TimeAxisTick & { type: "year" | "month" }) => {
-    if (tick.type === "year") {
-      return `${tick.year}`;
-    } else {
-      return `${tick.year} · ${String(tick.month).padStart(2, "0")}`;
-    }
-  };
-
-  const getAccessibleLabel = (tick: TimeAxisTick & { type: "year" | "month" }) => {
-    if (tick.type === "year") {
-      return `Jump to year ${tick.year}`;
-    } else {
-      return `Jump to ${formatMonthFull(tick.month!)} ${tick.year}`;
-    }
-  };
-
-  if (data.years.length === 0) {
+  // Don't render if no years or not enough space
+  if (yearTicks.length === 0 || leftPosition === null) {
     return null;
   }
 
   return (
     <div
       ref={axisRef}
-      className="fixed left-0 top-12 bottom-0 z-40 hidden w-16 flex-col items-center py-8 md:flex"
+      className="fixed top-0 bottom-0 z-40 hidden items-center justify-end lg:flex"
+      style={{ 
+        left: 0,
+        width: `${leftPosition}px`,
+        paddingTop: "48px", // Header height
+      }}
       role="navigation"
       aria-label="Time navigation"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onFocus={() => focusedIndex < 0 && setFocusedIndex(0)}
     >
-      <div className="flex flex-col items-end gap-3 pr-2">
-        {allTicks.map((tick, index) => {
-          const tickKey = tick.type === "year" ? `y-${tick.year}` : `m-${tick.year}-${tick.month}`;
-          const isActive = isTickActive(tick);
-          const isFocused = index === focusedIndex;
-          const isYear = tick.type === "year";
+      <div className="flex flex-col items-end gap-4 pr-2">
+        {yearTicks.map((tick) => {
+          const tickKey = `y-${tick.year}`;
+          const isActive = currentYear === tick.year;
+          const isHovered = hoveredTick === tickKey;
 
           return (
-            <Tooltip
-              key={tickKey}
-              content={
-                <span className="text-xs text-zinc-700 dark:text-zinc-300">
-                  {getTickLabel(tick)}
-                </span>
-              }
-              placement="right"
-              delay={0}
-              closeDelay={0}
-              isOpen={hoveredTick === tickKey || isFocused}
-              classNames={{
-                content: "bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded shadow-sm",
-              }}
-            >
+            <div key={tickKey} className="relative flex items-center">
+              {/* Custom tooltip - positioned to the right of the line */}
+              {isHovered && (
+                <div className="absolute left-full ml-2 whitespace-nowrap rounded bg-white px-2 py-1 text-xs font-medium text-zinc-700 shadow-md border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700">
+                  {tick.year}
+                </div>
+              )}
+              
               <button
                 className={`
-                  relative transition-all duration-150 rounded-full
-                  ${isYear ? "h-1" : "h-0.5"}
-                  ${
-                    isActive
-                      ? "w-8 bg-zinc-600 dark:bg-zinc-300"
-                      : "w-6 bg-zinc-300 hover:bg-zinc-400 dark:bg-zinc-600 dark:hover:bg-zinc-500"
+                  h-0.5 w-7 rounded-sm transition-colors duration-150
+                  ${isActive 
+                    ? "bg-zinc-900 dark:bg-zinc-100" 
+                    : "bg-zinc-300 hover:bg-zinc-400 dark:bg-zinc-600 dark:hover:bg-zinc-500"
                   }
-                  ${isFocused ? "ring-2 ring-blue-500 ring-offset-2" : ""}
                 `}
                 onClick={() => handleTickClick(tick)}
                 onMouseEnter={() => setHoveredTick(tickKey)}
                 onMouseLeave={() => setHoveredTick(null)}
-                aria-label={getAccessibleLabel(tick)}
-                tabIndex={-1}
+                aria-label={`Jump to year ${tick.year}`}
               />
-            </Tooltip>
+            </div>
           );
         })}
       </div>
