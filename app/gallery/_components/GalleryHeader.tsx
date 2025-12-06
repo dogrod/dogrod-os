@@ -34,13 +34,13 @@ export function GalleryHeader() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[100] h-12">
-      <div className="flex h-full items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 z-[100] h-16 bg-zinc-50 min-[1800px]:bg-transparent dark:bg-zinc-950 dark:min-[1800px]:bg-transparent">
+      <div className="flex h-full items-center justify-between px-6">
         {/* Left: Logo/Title */}
         <Link
           href="/gallery"
           onClick={handleLogoClick}
-          className="flex items-center gap-2 text-base font-semibold tracking-tight text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
+          className="flex items-center gap-3 text-xl font-semibold tracking-tight text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
         >
           <span className="text-zinc-400 dark:text-zinc-500">dogrodOS</span>
           <span className="text-zinc-300 dark:text-zinc-600">|</span>
@@ -53,15 +53,15 @@ export function GalleryHeader() {
             <Button
               isIconOnly
               variant="light"
-              size="sm"
+              size="md"
               className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
               onPress={handleClose}
               aria-label="Close"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
