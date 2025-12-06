@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { PhotoCard } from "./PhotoCard";
 import { fetchMorePhotosAction } from "@/lib/gallery/actions";
 import type { PhotoWithRenditions, TimeAxisData } from "@/lib/gallery/types";
@@ -16,6 +16,74 @@ interface PhotoGridProps {
 
 const SCROLL_POSITION_KEY = "gallery-scroll-position";
 const PHOTOS_STATE_KEY = "gallery-photos-state";
+
+// Breakpoints matching Tailwind's sm and md
+const BREAKPOINTS = {
+  sm: 640,
+  md: 768,
+};
+
+/**
+ * Distribute photos to columns using "shortest column first" algorithm
+ * This ensures photos are ordered top-to-bottom by time while maintaining
+ * a balanced masonry layout
+ */
+function distributePhotosToColumns(
+  photos: PhotoWithRenditions[],
+  columnCount: number
+): PhotoWithRenditions[][] {
+  if (columnCount === 1) {
+    return [photos];
+  }
+
+  // Initialize columns and height tracking
+  const columns: PhotoWithRenditions[][] = Array.from({ length: columnCount }, () => []);
+  const columnHeights: number[] = Array(columnCount).fill(0);
+
+  for (const photo of photos) {
+    // Find the shortest column
+    const minHeight = Math.min(...columnHeights);
+    const shortestColumnIndex = columnHeights.indexOf(minHeight);
+
+    // Add photo to the shortest column
+    columns[shortestColumnIndex].push(photo);
+
+    // Update column height using aspect ratio inverse as relative height
+    const aspectRatio = photo.aspect_ratio || photo.width / photo.height || 1;
+    columnHeights[shortestColumnIndex] += 1 / aspectRatio;
+  }
+
+  return columns;
+}
+
+/**
+ * Hook to track responsive column count
+ */
+function useColumnCount(): number {
+  const [columnCount, setColumnCount] = useState(3); // Default to 3 columns
+
+  useEffect(() => {
+    const updateColumnCount = () => {
+      const width = window.innerWidth;
+      if (width < BREAKPOINTS.sm) {
+        setColumnCount(1);
+      } else if (width < BREAKPOINTS.md) {
+        setColumnCount(2);
+      } else {
+        setColumnCount(3);
+      }
+    };
+
+    // Set initial value
+    updateColumnCount();
+
+    // Listen for resize
+    window.addEventListener("resize", updateColumnCount);
+    return () => window.removeEventListener("resize", updateColumnCount);
+  }, []);
+
+  return columnCount;
+}
 
 /**
  * Masonry photo grid with infinite scroll
@@ -36,6 +104,15 @@ export function PhotoGrid({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const lastScrollReport = useRef<string | null>(null);
+
+  // Track responsive column count
+  const columnCount = useColumnCount();
+
+  // Distribute photos to columns for row-first ordering
+  const columns = useMemo(
+    () => distributePhotosToColumns(photos, columnCount),
+    [photos, columnCount]
+  );
 
   // Save scroll position before navigation
   const saveScrollPosition = useCallback(() => {
@@ -186,15 +263,22 @@ export function PhotoGrid({
 
   return (
     <div ref={gridRef} className="w-full">
-      {/* Masonry grid using CSS columns */}
-      <div className="columns-1 gap-5 sm:columns-2 md:columns-3">
-        {photos.map((photo, index) => (
-          <div key={photo.id} className="mb-5 break-inside-avoid">
-            <PhotoCard
-              photo={photo}
-              priority={index < 8}
-              onNavigate={saveScrollPosition}
-            />
+      {/* Masonry grid using flex columns with row-first distribution */}
+      <div className="flex gap-5">
+        {columns.map((columnPhotos, colIndex) => (
+          <div key={colIndex} className="flex flex-1 flex-col gap-5">
+            {columnPhotos.map((photo) => {
+              // Calculate global index for priority loading
+              const globalIndex = photos.indexOf(photo);
+              return (
+                <PhotoCard
+                  key={photo.id}
+                  photo={photo}
+                  priority={globalIndex < 8}
+                  onNavigate={saveScrollPosition}
+                />
+              );
+            })}
           </div>
         ))}
       </div>
