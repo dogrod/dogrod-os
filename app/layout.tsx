@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "dogrodOS",
   description: "A personal OS-style web application",
+  icons: {
+    icon: "https://cdn.dogrod.com/favicon.ico",
+  },
 };
 
 export default function RootLayout({
