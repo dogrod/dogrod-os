@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GalleryLink } from "./_components/GalleryLink";
 
 export const metadata: Metadata = {
   title: "Blog | dogrodOS",
@@ -22,8 +23,8 @@ export default function BlogPage() {
 
         {/* Footer */}
         <p className="max-w-2xl text-base leading-relaxed text-zinc-400">
-          You can go write some code, take a walk, or fix that one bug you have
-          been ignoring, then check back here later.
+          You can go write some code, take a walk, fix that one bug you have
+          been ignoring, or <GalleryLink />.
         </p>
       </div>
     </div>
