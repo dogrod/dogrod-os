@@ -349,20 +349,22 @@ export function PhotoViewer({
       {prevPhotoId && (
         <div
           data-nav-zone="prev"
-          className={`${isFullscreen ? "absolute top-0" : "fixed"} left-0 bottom-0 flex w-20 cursor-pointer items-center justify-center transition-opacity`}
-          style={isFullscreen ? undefined : { top: "48px" }}
-          onClick={(e) => {
-            e.stopPropagation();
-            navigateToPrev("click");
-          }}
+          className={`${isFullscreen ? "absolute top-0" : "fixed"} left-0 bottom-0 z-10 flex w-20 items-center justify-center`}
+          style={isFullscreen ? undefined : { top: "64px" }}
           onMouseEnter={() => setShowPrevArrow(true)}
           onMouseLeave={() => setShowPrevArrow(false)}
         >
-          <div
+          <button
+            type="button"
             className={`
-              rounded-full bg-black/40 p-2 backdrop-blur-sm transition-opacity duration-200
+              rounded-full bg-black/40 p-2 backdrop-blur-sm transition-opacity duration-200 cursor-pointer
               ${showPrevArrow ? "opacity-100" : "opacity-0"}
             `}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateToPrev("click");
+            }}
+            aria-label="Previous photo"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -377,7 +379,7 @@ export function PhotoViewer({
             >
               <path d="M15 18l-6-6 6-6" />
             </svg>
-          </div>
+          </button>
         </div>
       )}
 
@@ -385,20 +387,22 @@ export function PhotoViewer({
       {nextPhotoId && (
         <div
           data-nav-zone="next"
-          className={`${isFullscreen ? "absolute top-0" : "fixed"} right-0 bottom-0 flex w-20 cursor-pointer items-center justify-center transition-opacity`}
-          style={isFullscreen ? undefined : { top: "48px" }}
-          onClick={(e) => {
-            e.stopPropagation();
-            navigateToNext("click");
-          }}
+          className={`${isFullscreen ? "absolute top-0" : "fixed"} right-0 bottom-0 z-10 flex w-20 items-center justify-center`}
+          style={isFullscreen ? undefined : { top: "64px" }}
           onMouseEnter={() => setShowNextArrow(true)}
           onMouseLeave={() => setShowNextArrow(false)}
         >
-          <div
+          <button
+            type="button"
             className={`
-              rounded-full bg-black/40 p-2 backdrop-blur-sm transition-opacity duration-200
+              rounded-full bg-black/40 p-2 backdrop-blur-sm transition-opacity duration-200 cursor-pointer
               ${showNextArrow ? "opacity-100" : "opacity-0"}
             `}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateToNext("click");
+            }}
+            aria-label="Next photo"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -413,19 +417,17 @@ export function PhotoViewer({
             >
               <path d="M9 18l6-6-6-6" />
             </svg>
-          </div>
+          </button>
         </div>
       )}
 
       {/* Image container */}
       <div
         ref={imageRef}
-        className="relative transition-transform duration-100"
+        className="relative h-full w-full p-[4%] transition-transform duration-100"
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: "center center",
-          maxWidth: "100%",
-          maxHeight: "100%",
         }}
       >
         <BlurhashImage
@@ -434,7 +436,8 @@ export function PhotoViewer({
           width={width}
           height={height}
           blurhash={blurhash}
-          className="max-h-full max-w-full object-contain"
+          className="h-full w-full"
+          objectFit="contain"
           onLoad={handleImageLoad}
         />
       </div>

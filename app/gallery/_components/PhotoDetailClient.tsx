@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import { PhotoViewer } from "./PhotoViewer";
 import { PhotoMetaInfo } from "./PhotoMetaInfo";
 import { ExifInfo } from "./ExifInfo";
 import { HistogramTooltip } from "./HistogramTooltip";
+import { usePhotoContext } from "./PhotoContext";
 import type { PhotoWithDetails } from "@/lib/gallery/types";
 import { getRenditionUrl } from "@/lib/gallery/types";
 
@@ -25,12 +27,26 @@ export function PhotoDetailClient({
   nextPhotoId,
 }: PhotoDetailClientProps) {
   const router = useRouter();
+  const { setPhotoInfo, clearPhotoInfo } = usePhotoContext();
 
-  // Get the detail variant URL
+  // Get the detail variant URL for viewing
   const imageUrl = getRenditionUrl(photo.renditions, "detail", "list");
   const detailRendition = photo.renditions.find((r) => r.variant_name === "detail");
   const imageWidth = detailRendition?.width || photo.width;
   const imageHeight = detailRendition?.height || photo.height;
+
+  // Get the highest quality URL for download (prefer xl > detail > list)
+  const downloadUrl = getRenditionUrl(photo.renditions, "xl", "detail") || imageUrl;
+
+  // Set photo info in context for header download button
+  useEffect(() => {
+    if (downloadUrl) {
+      setPhotoInfo(photo.id, downloadUrl);
+    }
+    return () => {
+      clearPhotoInfo();
+    };
+  }, [photo.id, downloadUrl, setPhotoInfo, clearPhotoInfo]);
 
   const handleBack = () => {
     // Try to go back in history, fallback to gallery list
@@ -67,7 +83,7 @@ export function PhotoDetailClient({
   );
 
   return (
-    <div className="flex h-[calc(100vh-48px)] flex-col">
+    <div className="flex h-[calc(100vh-64px)] flex-col overflow-hidden">
       {/* Photo viewer with navigation zones */}
       <div className="min-h-0 flex-1">
         <PhotoViewer

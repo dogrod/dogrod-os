@@ -3,10 +3,13 @@
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@heroui/react";
+import { usePhotoContext } from "./PhotoContext";
+import { trackPhotoDownload } from "@/lib/analytics";
 
 export function GalleryHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const { photoId, downloadUrl } = usePhotoContext();
 
   // Detect if we're on a detail page (has photoId in path)
   const isDetailPage = pathname !== "/gallery" && pathname.startsWith("/gallery/");
@@ -14,22 +17,44 @@ export function GalleryHeader() {
   const handleLogoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isDetailPage) {
-      // On detail page, navigate back to gallery list
+      // On detail page, navigate to gallery list
       e.preventDefault();
-      if (window.history.length > 1) {
-        router.back();
-      } else {
-        router.push("/gallery");
-      }
+      router.push("/gallery");
     }
     // On list page, do nothing (keeps state)
   };
 
   const handleClose = () => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/gallery");
+    router.push("/gallery");
+  };
+
+  const handleDownload = async () => {
+    if (!downloadUrl || !photoId) return;
+
+    // Track download event
+    trackPhotoDownload({ photo_id: photoId });
+
+    // Fetch image and trigger download
+    try {
+      const response = await fetch(downloadUrl, { mode: "cors" });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `photo-${photoId}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      // Fallback: open in new tab
+      window.open(downloadUrl, "_blank");
     }
   };
 
@@ -47,8 +72,34 @@ export function GalleryHeader() {
           <span>Gallery</span>
         </Link>
 
-        {/* Right: Close button on detail page */}
-        <div className="flex items-center">
+        {/* Right: Download & Close buttons on detail page */}
+        <div className="flex items-center gap-1">
+          {isDetailPage && downloadUrl && (
+            <Button
+              isIconOnly
+              variant="light"
+              size="md"
+              className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              onPress={handleDownload}
+              aria-label="Download"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </Button>
+          )}
           {isDetailPage && (
             <Button
               isIconOnly

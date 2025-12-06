@@ -168,7 +168,12 @@ export function PhotoGrid({
     startTransition(async () => {
       try {
         const result = await fetchMorePhotosAction(cursor);
-        setPhotos((prev) => [...prev, ...result.photos]);
+        setPhotos((prev) => {
+          // Deduplicate: only add photos that don't already exist
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newPhotos = result.photos.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...newPhotos];
+        });
         setCursor(result.nextCursor);
         setHasMore(result.hasMore);
       } catch (error) {

@@ -93,6 +93,14 @@ export interface FullscreenEvent {
   action: "enter" | "exit";
 }
 
+/**
+ * Photo download event - tracks when user downloads a photo
+ */
+export interface PhotoDownloadEvent {
+  /** Photo ID */
+  photo_id: string;
+}
+
 // ============================================================================
 // Event Names (consistent naming: noun-verb pattern)
 // ============================================================================
@@ -103,6 +111,7 @@ export const ANALYTICS_EVENTS = {
   TIMELINE_NAVIGATED: "timeline-navigated",
   PHOTO_ZOOMED: "photo-zoomed",
   FULLSCREEN_TOGGLED: "fullscreen-toggled",
+  PHOTO_DOWNLOADED: "photo-downloaded",
 } as const;
 
 // ============================================================================
@@ -183,4 +192,11 @@ export function trackPhotoZoom(event: PhotoZoomEvent): void {
  */
 export function trackFullscreen(event: FullscreenEvent): void {
   track(ANALYTICS_EVENTS.FULLSCREEN_TOGGLED, event as unknown as Record<string, unknown>);
+}
+
+/**
+ * Track photo download event
+ */
+export function trackPhotoDownload(event: PhotoDownloadEvent): void {
+  track(ANALYTICS_EVENTS.PHOTO_DOWNLOADED, event as unknown as Record<string, unknown>);
 }

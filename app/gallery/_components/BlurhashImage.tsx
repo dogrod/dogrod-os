@@ -15,6 +15,8 @@ interface BlurhashImageProps {
   sizes?: string;
   onLoad?: () => void;
   onClick?: () => void;
+  /** Object fit mode for the image. Defaults to "cover" */
+  objectFit?: "cover" | "contain";
 }
 
 /**
@@ -32,6 +34,7 @@ export function BlurhashImage({
   sizes,
   onLoad,
   onClick,
+  objectFit = "cover",
 }: BlurhashImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [blurhashDataUrl, setBlurhashDataUrl] = useState<string | null>(null);
@@ -70,20 +73,25 @@ export function BlurhashImage({
     onLoad?.();
   };
 
+  const isContain = objectFit === "contain";
+
   return (
     <div
       className={`relative overflow-hidden ${className}`}
-      style={{ aspectRatio: `${width} / ${height}` }}
+      style={isContain ? undefined : { aspectRatio: `${width} / ${height}` }}
       onClick={onClick}
     >
       {/* Blurhash placeholder */}
       {blurhashDataUrl && !isLoaded && (
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0"
           style={{
             backgroundImage: `url(${blurhashDataUrl})`,
+            backgroundSize: isContain ? "contain" : "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
             filter: "blur(20px)",
-            transform: "scale(1.2)", // Prevent blur edge artifacts
+            transform: "scale(1.1)",
           }}
         />
       )}
@@ -99,9 +107,9 @@ export function BlurhashImage({
         alt={alt}
         width={width}
         height={height}
-        className={`relative z-10 h-full w-full object-cover transition-opacity duration-300 ${
-          isLoaded ? "opacity-100" : "opacity-0"
-        }`}
+        className={`relative z-10 h-full w-full transition-opacity duration-300 ${
+          isContain ? "object-contain" : "object-cover"
+        } ${isLoaded ? "opacity-100" : "opacity-0"}`}
         priority={priority}
         sizes={sizes}
         onLoad={handleLoad}
