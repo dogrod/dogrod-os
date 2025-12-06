@@ -24,7 +24,7 @@ export default function BlogPage() {
         {/* Footer */}
         <p className="max-w-2xl text-base leading-relaxed text-zinc-400">
           You can go write some code, take a walk, fix that one bug you have
-          been ignoring, or <GalleryLink />.
+          been ignoring, or <GalleryLink /> captured by Brian.
         </p>
       </div>
     </div>

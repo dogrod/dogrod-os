@@ -20,7 +20,7 @@ export function GalleryLink() {
       onClick={handleClick}
       className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-900"
     >
-      check out amazing photos captured by Brian
+      check out amazing photos
     </Link>
   );
 }
