@@ -14,10 +14,10 @@ export default function Home() {
       <HomeHeader />
 
       {/* Main Content */}
-      <main className="px-6 pb-16 pt-8 lg:px-8 lg:pt-12">
+      <main className="px-3 pb-16 pt-8 sm:px-6 lg:px-8 lg:pt-12">
         <div className="mx-auto max-w-5xl">
           {/* Main Card Container */}
-          <div className="rounded-2xl p-6 sm:p-8 lg:p-12">
+          <div className="rounded-2xl p-3 sm:p-6 lg:p-12">
             {/* Hero Section: Two columns on desktop */}
             <section className="mb-12 lg:mb-16">
               <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">

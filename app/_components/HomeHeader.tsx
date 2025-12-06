@@ -127,7 +127,7 @@ export function HomeHeader() {
               width={40}
             />
           </span>
-          <span className="hidden sm:inline">Brian Zhu</span>
+          <span>Brian Zhu</span>
         </Link>
 
         {/* Desktop Navigation */}
