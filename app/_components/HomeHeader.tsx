@@ -6,10 +6,10 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 // Social links - easy to update
 const SOCIAL_LINKS = {
-  x: "https://x.com/", // Replace with actual X handle
-  instagram: "https://instagram.com/", // Replace with actual Instagram
-  unsplash: "https://unsplash.com/@", // Replace with actual Unsplash
-  linkedin: "https://linkedin.com/in/", // Replace with actual LinkedIn
+  x: "https://x.com/dogrod_",
+  instagram: "https://www.instagram.com/dogrod_/",
+  unsplash: "https://unsplash.com/@dogrod",
+  linkedin: "https://www.linkedin.com/in/brianzhu7/"
 };
 
 interface DropdownItemProps {
