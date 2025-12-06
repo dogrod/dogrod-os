@@ -3,6 +3,7 @@
 import { useCallback, useRef, useEffect } from "react";
 import type { TimeAxisData, TimeAxisTick } from "@/lib/gallery/types";
 import { formatMonth } from "@/lib/gallery/utils";
+import { trackTimelineNavigation } from "@/lib/analytics";
 
 interface TimeAxisMobileProps {
   data: TimeAxisData;
@@ -51,6 +52,10 @@ export function TimeAxisMobile({ data, currentDate, onJumpToPhoto }: TimeAxisMob
 
   const handleTickClick = useCallback(
     (tick: TimeAxisTick) => {
+      trackTimelineNavigation({
+        year: tick.year,
+        device: "mobile",
+      });
       onJumpToPhoto(tick.photoId, tick.photoIndex);
     },
     [onJumpToPhoto]

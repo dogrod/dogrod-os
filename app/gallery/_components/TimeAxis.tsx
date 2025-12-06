@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, useEffect } from "react";
 import type { TimeAxisData, TimeAxisTick } from "@/lib/gallery/types";
+import { trackTimelineNavigation } from "@/lib/analytics";
 
 interface TimeAxisProps {
   data: TimeAxisData;
@@ -60,6 +61,10 @@ export function TimeAxis({ data, currentDate, onJumpToPhoto }: TimeAxisProps) {
 
   const handleTickClick = useCallback(
     (tick: TimeAxisTick) => {
+      trackTimelineNavigation({
+        year: tick.year,
+        device: "desktop",
+      });
       onJumpToPhoto(tick.photoId, tick.photoIndex);
     },
     [onJumpToPhoto]

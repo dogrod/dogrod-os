@@ -36,6 +36,10 @@ Create a `.env.local` file in the project root:
 # Supabase Configuration
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key-here
+
+# Analytics (Umami) - Optional
+NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://your-umami-instance.com/script.js
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=your-website-id
 ```
 
 ### Installation
@@ -78,6 +82,7 @@ dogrod-os/
 ## Documentation
 
 - [AI Coding Guidelines](docs/ai-coding.md) - Guidelines for AI-assisted development
+- [Analytics Tracking](docs/analytics-tracking.md) - Umami analytics implementation
 
 ## Development
 

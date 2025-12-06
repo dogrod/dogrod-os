@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BlurhashImage } from "./BlurhashImage";
 import { Button } from "@heroui/react";
+import { trackImageViewed, trackGalleryNavigation } from "@/lib/analytics";
 
 interface PhotoViewerProps {
   src: string;
@@ -13,6 +14,8 @@ interface PhotoViewerProps {
   blurhash?: string | null;
   prevPhotoId?: string | null;
   nextPhotoId?: string | null;
+  /** Photo ID for analytics tracking */
+  photoId: string;
 }
 
 const MIN_ZOOM = 1;
@@ -31,6 +34,7 @@ export function PhotoViewer({
   blurhash,
   prevPhotoId,
   nextPhotoId,
+  photoId,
 }: PhotoViewerProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,12 +52,19 @@ export function PhotoViewer({
   const [isLoaded, setIsLoaded] = useState(false);
   const [showPrevArrow, setShowPrevArrow] = useState(false);
   const [showNextArrow, setShowNextArrow] = useState(false);
+  
+  // Track load start time for analytics
+  const loadStartTimeRef = useRef<number>(Date.now());
+  const hasTrackedLoadRef = useRef(false);
 
   // Reset zoom and pan when image changes
   useEffect(() => {
     setZoom(MIN_ZOOM);
     setPan({ x: 0, y: 0 });
     setIsLoaded(false);
+    // Reset analytics tracking for new image
+    loadStartTimeRef.current = Date.now();
+    hasTrackedLoadRef.current = false;
   }, [src]);
 
   // Clamp pan values to prevent showing empty space
@@ -251,18 +262,43 @@ export function PhotoViewer({
     };
   }, []);
 
-  // Navigation handlers
-  const navigateToPrev = useCallback(() => {
+  // Navigation handlers with analytics tracking
+  const navigateToPrev = useCallback((method: "click" | "keyboard" = "click") => {
     if (prevPhotoId) {
+      trackGalleryNavigation({
+        method,
+        direction: "prev",
+        photo_id: prevPhotoId,
+      });
       router.push(`/gallery/${prevPhotoId}`);
     }
   }, [prevPhotoId, router]);
 
-  const navigateToNext = useCallback(() => {
+  const navigateToNext = useCallback((method: "click" | "keyboard" = "click") => {
     if (nextPhotoId) {
+      trackGalleryNavigation({
+        method,
+        direction: "next",
+        photo_id: nextPhotoId,
+      });
       router.push(`/gallery/${nextPhotoId}`);
     }
   }, [nextPhotoId, router]);
+
+  // Track image-viewed when image loads on detail page
+  const handleImageLoad = useCallback(() => {
+    setIsLoaded(true);
+    
+    // Only track once per image
+    if (!hasTrackedLoadRef.current) {
+      hasTrackedLoadRef.current = true;
+      trackImageViewed({
+        photo_id: photoId,
+        source: "detail",
+        load_time_ms: Date.now() - loadStartTimeRef.current,
+      });
+    }
+  }, [photoId]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -275,9 +311,9 @@ export function PhotoViewer({
         setZoom(MIN_ZOOM);
         setPan({ x: 0, y: 0 });
       } else if (e.key === "ArrowLeft") {
-        navigateToPrev();
+        navigateToPrev("keyboard");
       } else if (e.key === "ArrowRight") {
-        navigateToNext();
+        navigateToNext("keyboard");
       }
     };
 
@@ -317,7 +353,7 @@ export function PhotoViewer({
           style={isFullscreen ? undefined : { top: "48px" }}
           onClick={(e) => {
             e.stopPropagation();
-            navigateToPrev();
+            navigateToPrev("click");
           }}
           onMouseEnter={() => setShowPrevArrow(true)}
           onMouseLeave={() => setShowPrevArrow(false)}
@@ -353,7 +389,7 @@ export function PhotoViewer({
           style={isFullscreen ? undefined : { top: "48px" }}
           onClick={(e) => {
             e.stopPropagation();
-            navigateToNext();
+            navigateToNext("click");
           }}
           onMouseEnter={() => setShowNextArrow(true)}
           onMouseLeave={() => setShowNextArrow(false)}
@@ -399,7 +435,7 @@ export function PhotoViewer({
           height={height}
           blurhash={blurhash}
           className="max-h-full max-w-full object-contain"
-          onLoad={() => setIsLoaded(true)}
+          onLoad={handleImageLoad}
         />
       </div>
 

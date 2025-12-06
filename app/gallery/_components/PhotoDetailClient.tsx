@@ -78,6 +78,7 @@ export function PhotoDetailClient({
           blurhash={photo.blurhash}
           prevPhotoId={prevPhotoId}
           nextPhotoId={nextPhotoId}
+          photoId={photo.id}
         />
       </div>
 
