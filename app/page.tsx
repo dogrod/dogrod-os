@@ -90,15 +90,6 @@ export default function Home() {
           </div>
         </div>
       </main>
-
-      {/* Footer - minimal */}
-      <footer className="px-6 pb-8 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="flex items-center justify-center text-xs text-zinc-400">
-            <span>© {new Date().getFullYear()} Brian Zhu</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
