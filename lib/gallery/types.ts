@@ -47,7 +47,10 @@ export interface AssetRendition {
   width: number | null;
   height: number | null;
   file_size: number | null;
+  format: string | null;
   checksum: string | null;
+  created_by: string | null;
+  updated_by: string | null;
   created_at: string;
   updated_at: string;
 }
