@@ -24,10 +24,11 @@ export function PhotoCard({ photo, priority = false, onNavigate }: PhotoCardProp
   const loadStartTimeRef = useRef<number>(Date.now());
 
   // Get the list variant URL, fallback to thumb
-  const imageUrl = getRenditionUrl(photo.renditions, "list", "thumb");
+  const renditions = photo.assets?.asset_rendition;
+  const imageUrl = getRenditionUrl(renditions, "list", "thumb");
 
   // Get rendition dimensions or fallback to photo dimensions
-  const listRendition = photo.renditions.find((r) => r.variant_name === "list");
+  const listRendition = renditions?.find((r) => r.variant_name === "list");
   const imageWidth = listRendition?.width || photo.width;
   const imageHeight = listRendition?.height || photo.height;
 
@@ -71,7 +72,7 @@ export function PhotoCard({ photo, priority = false, onNavigate }: PhotoCardProp
         alt={photo.title || photo.description || "Photo"}
         width={imageWidth}
         height={imageHeight}
-        blurhash={photo.blurhash}
+        blurhash={photo.assets?.blurhash}
         priority={priority}
         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
         className="transition-transform duration-200 group-hover:scale-[1.02]"
