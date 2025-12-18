@@ -28,8 +28,6 @@ export interface Photo {
   country: string | null;
   latitude: number | null;
   longitude: number | null;
-  dominant_color: string | null;
-  blurhash: string | null;
   megapixels: number | null;
   dynamic_range_usage: number | null;
   is_visible: boolean;
@@ -40,10 +38,10 @@ export interface Photo {
 }
 
 /**
- * Photo rendition/variant from the `photo_rendition` table
+ * Asset rendition/variant from the `asset_rendition` table
  */
-export interface PhotoRendition {
-  photo_id: string;
+export interface AssetRendition {
+  asset_id: string;
   variant_name: string;
   url: string;
   width: number | null;
@@ -53,6 +51,22 @@ export interface PhotoRendition {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * Asset entity from the `assets` table
+ * Contains visual metadata (blurhash, dominant_color) and renditions
+ */
+export interface Asset {
+  id: string;
+  dominant_color: string | null;
+  blurhash: string | null;
+  asset_rendition: AssetRendition[];
+}
+
+/**
+ * @deprecated Use AssetRendition instead. Kept for backward compatibility.
+ */
+export type PhotoRendition = AssetRendition;
 
 /**
  * EXIF metadata from the `photo_exif` table
@@ -94,17 +108,17 @@ export interface PhotoHistogram {
 }
 
 /**
- * Photo with renditions for list page
+ * Photo with asset (including renditions) for list page
  */
 export interface PhotoWithRenditions extends Photo {
-  renditions: PhotoRendition[];
+  assets: Asset | null;
 }
 
 /**
  * Complete photo with all details for detail page
  */
 export interface PhotoWithDetails extends Photo {
-  renditions: PhotoRendition[];
+  assets: Asset | null;
   exif: PhotoExif | null;
   histogram: PhotoHistogram | null;
 }
@@ -142,10 +156,12 @@ export type RenditionVariant = "thumb" | "list" | "detail" | "xl";
  * Get the URL for a specific rendition variant
  */
 export function getRenditionUrl(
-  renditions: PhotoRendition[],
+  renditions: AssetRendition[] | undefined | null,
   variant: RenditionVariant,
   fallbackVariant?: RenditionVariant
 ): string | null {
+  if (!renditions || renditions.length === 0) return null;
+
   const rendition = renditions.find((r) => r.variant_name === variant);
   if (rendition) return rendition.url;
 

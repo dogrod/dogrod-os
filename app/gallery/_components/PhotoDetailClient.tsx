@@ -30,13 +30,14 @@ export function PhotoDetailClient({
   const { setPhotoInfo, clearPhotoInfo } = usePhotoContext();
 
   // Get the detail variant URL for viewing
-  const imageUrl = getRenditionUrl(photo.renditions, "detail", "list");
-  const detailRendition = photo.renditions.find((r) => r.variant_name === "detail");
+  const renditions = photo.assets?.asset_rendition;
+  const imageUrl = getRenditionUrl(renditions, "detail", "list");
+  const detailRendition = renditions?.find((r) => r.variant_name === "detail");
   const imageWidth = detailRendition?.width || photo.width;
   const imageHeight = detailRendition?.height || photo.height;
 
   // Get the highest quality URL for download (prefer xl > detail > list)
-  const downloadUrl = getRenditionUrl(photo.renditions, "xl", "detail") || imageUrl;
+  const downloadUrl = getRenditionUrl(renditions, "xl", "detail") || imageUrl;
 
   // Set photo info in context for header download button
   useEffect(() => {
@@ -91,7 +92,7 @@ export function PhotoDetailClient({
           alt={photo.title || photo.description || "Photo"}
           width={imageWidth}
           height={imageHeight}
-          blurhash={photo.blurhash}
+          blurhash={photo.assets?.blurhash}
           prevPhotoId={prevPhotoId}
           nextPhotoId={nextPhotoId}
           photoId={photo.id}

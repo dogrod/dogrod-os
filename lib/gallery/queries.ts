@@ -3,10 +3,9 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   Photo,
-  PhotoRendition,
+  Asset,
   PhotoExif,
   PhotoHistogram,
-  PhotoWithRenditions,
   PhotoWithDetails,
   GalleryPhotosResponse,
   TimeAxisData,
@@ -40,7 +39,12 @@ export async function getGalleryPhotos(
     .select(
       `
       *,
-      renditions:photo_rendition(*)
+      assets(
+        id,
+        dominant_color,
+        blurhash,
+        asset_rendition(*)
+      )
     `
     )
     .eq("is_visible", PUBLIC_PHOTO_CONDITIONS.is_visible)
@@ -63,7 +67,7 @@ export async function getGalleryPhotos(
     throw new Error("Failed to fetch gallery photos");
   }
 
-  const photos = (data || []) as (Photo & { renditions: PhotoRendition[] })[];
+  const photos = (data || []) as (Photo & { assets: Asset | null })[];
 
   // Check if there are more photos
   const hasMore = photos.length > limit;
@@ -174,7 +178,12 @@ export async function getPhotoById(id: string): Promise<PhotoWithDetails | null>
     .select(
       `
       *,
-      renditions:photo_rendition(*),
+      assets(
+        id,
+        dominant_color,
+        blurhash,
+        asset_rendition(*)
+      ),
       exif:photo_exif(*),
       histogram:photo_histogram(*)
     `
@@ -198,14 +207,14 @@ export async function getPhotoById(id: string): Promise<PhotoWithDetails | null>
 
   // Transform the response to match our types
   const photoData = photo as Photo & {
-    renditions: PhotoRendition[];
+    assets: Asset | null;
     exif: PhotoExif | PhotoExif[] | null;
     histogram: PhotoHistogram | PhotoHistogram[] | null;
   };
 
   return {
     ...photoData,
-    renditions: photoData.renditions || [],
+    assets: photoData.assets || null,
     exif: Array.isArray(photoData.exif) ? photoData.exif[0] || null : photoData.exif,
     histogram: Array.isArray(photoData.histogram)
       ? photoData.histogram[0] || null
