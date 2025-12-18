@@ -1,5 +1,6 @@
 "use client";
 
+import { Camera } from "lucide-react";
 import { BlurhashImage } from "@/app/gallery/_components/BlurhashImage";
 import type { PostWithDetails } from "@/lib/blog/types";
 import {
@@ -14,7 +15,7 @@ interface PostHeroProps {
 
 /**
  * Hero section for blog detail page
- * Shows title, date, cover image, and optional camera info
+ * Shows title, date, cover image, and optional camera info badge
  */
 export function PostHero({ post }: PostHeroProps) {
   const coverUrl = getAssetRenditionUrl(
@@ -36,19 +37,19 @@ export function PostHero({ post }: PostHeroProps) {
         {/* Date */}
         <time
           dateTime={post.published_at || undefined}
-          className="block text-sm text-zinc-500 mb-4"
+          className="block text-sm text-zinc-400 mb-4 font-sans tracking-wide uppercase"
         >
           {formatPublishedDate(post.published_at)}
         </time>
 
-        {/* Title */}
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-tight">
+        {/* Title - Sans-serif, bold, larger */}
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900 leading-[1.15] font-sans">
           {post.title}
         </h1>
 
-        {/* Excerpt as subtitle */}
+        {/* Excerpt as lead - Serif, italic, muted, distinct from body */}
         {post.excerpt && (
-          <p className="mt-4 text-xl text-zinc-600 leading-relaxed">
+          <p className="mt-6 mb-8 text-xl sm:text-2xl text-zinc-500 leading-relaxed font-serif italic">
             {post.excerpt}
           </p>
         )}
@@ -57,7 +58,7 @@ export function PostHero({ post }: PostHeroProps) {
       {/* Cover Image */}
       {coverUrl && (
         <div className="relative w-full max-w-4xl mx-auto px-6">
-          <div className="rounded-lg overflow-hidden bg-zinc-100">
+          <div className="rounded-xl overflow-hidden bg-zinc-100 shadow-sm">
             <BlurhashImage
               src={coverUrl}
               alt={post.title}
@@ -70,11 +71,14 @@ export function PostHero({ post }: PostHeroProps) {
             />
           </div>
 
-          {/* Camera Info (if linked to gallery photo) */}
+          {/* Camera Info Badge (if linked to gallery photo) */}
           {cameraInfo && (
-            <p className="mt-3 text-center text-sm text-zinc-500">
-              Shot on {cameraInfo}
-            </p>
+            <div className="flex justify-center mt-4">
+              <span className="inline-flex items-center gap-1.5 bg-zinc-100 text-zinc-600 text-xs font-medium px-3 py-1.5 rounded-full font-sans">
+                <Camera className="w-3.5 h-3.5" />
+                <span>Shot on {cameraInfo}</span>
+              </span>
+            </div>
           )}
         </div>
       )}

@@ -208,6 +208,50 @@ LIMIT 1
 
 ---
 
+## Visual Polish (v1.1)
+
+### Typography Overhaul
+- **Serif Body Text**: Lora font applied to paragraphs, lists, and blockquotes
+- **Sans-Serif Headings**: Maintains OS aesthetic contrast with body
+- **Heading Hierarchy Fix**: Markdown `#` (H1) renders as `<h2>` visually to not compete with page title
+
+### Excerpt Styling (Editorial Lead)
+- Larger size (`text-xl` / `text-2xl`)
+- Muted color (`text-zinc-500`)
+- Italic styling for editorial feel
+- Serif font (Lora) for consistency
+
+### Code Block Syntax Highlighting
+- **Library**: `react-syntax-highlighter` with Prism
+- **Theme**: VS Code Dark Plus (`vscDarkPlus`)
+- **Styling**: Rounded corners, proper overflow handling
+- **Inline Code**: Light gray background with subtle styling
+
+### EXIF Camera Badge
+- Capsule/pill styling with rounded-full
+- Camera icon from `lucide-react`
+- Gray background (`bg-zinc-100`)
+- Centered below cover image
+
+### Additional Improvements
+- Tables with proper styling
+- Figure captions for images
+- Gradient horizontal rules
+- Enhanced link styling with underline offset
+
+---
+
+## Dependencies Added
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `react-syntax-highlighter` | ^16.1.0 | Code block syntax highlighting |
+| `@types/react-syntax-highlighter` | ^15.5.13 | TypeScript definitions |
+| `lucide-react` | ^0.562.0 | Camera icon and future icons |
+| `@tailwindcss/typography` | ^0.5.19 | Prose styling utilities |
+
+---
+
 ## Future Enhancements
 
 - [ ] MDX support for rich content
