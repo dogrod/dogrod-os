@@ -18,10 +18,12 @@ interface PostHeroProps {
  * Shows title, date, cover image, and optional camera info badge
  */
 export function PostHero({ post }: PostHeroProps) {
+  // Request "detail" variant first (commonly used for detail pages),
+  // with "large" as fallback. The function will also try xl, og_card, etc.
   const coverUrl = getAssetRenditionUrl(
     post.assets?.asset_rendition,
-    "large",
-    "xl"
+    "detail",
+    "large"
   );
   const blurhash = post.assets?.blurhash;
 

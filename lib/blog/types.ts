@@ -60,7 +60,21 @@ export interface BlogPostsResponse {
 }
 
 /**
+ * Preferred rendition order for cover/hero images (largest first)
+ */
+const COVER_IMAGE_VARIANT_PREFERENCE = [
+  "xl",
+  "large",
+  "detail",
+  "og_card",
+  "medium",
+  "list",
+  "thumb",
+];
+
+/**
  * Get the URL for a specific rendition variant from an asset
+ * Falls back through a preference list for cover images
  */
 export function getAssetRenditionUrl(
   renditions: AssetRendition[] | undefined | null,
@@ -69,15 +83,23 @@ export function getAssetRenditionUrl(
 ): string | null {
   if (!renditions || renditions.length === 0) return null;
 
+  // Try the requested variant first
   const rendition = renditions.find((r) => r.variant_name === variant);
   if (rendition) return rendition.url;
 
+  // Try the explicit fallback variant
   if (fallbackVariant) {
     const fallback = renditions.find((r) => r.variant_name === fallbackVariant);
     if (fallback) return fallback.url;
   }
 
-  // Return any available rendition as last resort
+  // Smart fallback: try variants in preference order (prefer larger images)
+  for (const preferredVariant of COVER_IMAGE_VARIANT_PREFERENCE) {
+    const preferred = renditions.find((r) => r.variant_name === preferredVariant);
+    if (preferred) return preferred.url;
+  }
+
+  // Last resort: return any available rendition
   return renditions[0]?.url ?? null;
 }
 
