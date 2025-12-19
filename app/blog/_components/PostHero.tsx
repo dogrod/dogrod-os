@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { Camera, Globe } from "lucide-react";
+import { Camera } from "lucide-react";
 import { BlurhashImage } from "@/app/gallery/_components/BlurhashImage";
 import type { PostWithDetails } from "@/lib/blog/types";
 import {
   getAssetRenditionUrl,
   formatPublishedDate,
   getCameraInfoString,
-  getLanguageInfo,
 } from "@/lib/blog/types";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 interface PostHeroProps {
   post: PostWithDetails;
@@ -17,8 +16,8 @@ interface PostHeroProps {
 
 /**
  * Hero section for blog detail page
- * Medium-style layout: Image → EXIF → Title → Excerpt → Meta → Language Switcher
- * All elements aligned to same max-width for visual consistency
+ * Medium-style layout: Image → EXIF → Title → Excerpt → Meta
+ * Language switcher positioned in top-right corner
  */
 export function PostHero({ post }: PostHeroProps) {
   // Request "detail" variant first, with smart fallback chain
@@ -34,13 +33,19 @@ export function PostHero({ post }: PostHeroProps) {
     ? getCameraInfoString(post.photos.photo_exif)
     : null;
 
-  // Get sibling translations (filter out siblings with no valid language)
-  const validSiblings = post.siblings?.filter((s) => s.language != null) || [];
-  const hasSiblings = validSiblings.length > 0;
-  const currentLangInfo = getLanguageInfo(post.language);
+  // Check for translations
+  const hasSiblings = post.siblings && post.siblings.length > 0;
 
   return (
-    <header className="mb-10">
+    <header className="relative mb-10">
+      {/* Ghost Language Switcher - Top Right */}
+      {hasSiblings && (
+        <LanguageSwitcher
+          currentLanguage={post.language}
+          siblings={post.siblings}
+        />
+      )}
+
       {/* 1. Cover Image (Top) - Aligned to content width */}
       {coverUrl && (
         <div className="mb-6">
@@ -80,39 +85,11 @@ export function PostHero({ post }: PostHeroProps) {
         </p>
       )}
 
-      {/* 5. Metadata (Date + Language Switcher) */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400 font-sans">
+      {/* 5. Metadata (Date) */}
+      <div className="text-sm text-zinc-400 font-sans">
         <time dateTime={post.published_at || undefined}>
           {formatPublishedDate(post.published_at)}
         </time>
-
-        {/* Language Switcher */}
-        {hasSiblings && post.language && (
-          <>
-            <span className="text-zinc-300">·</span>
-            <div className="flex items-center gap-2">
-              <Globe className="w-3.5 h-3.5" />
-              <span className="text-zinc-500">
-                {currentLangInfo.flag} {currentLangInfo.nativeName}
-              </span>
-              <span className="text-zinc-300">|</span>
-              {validSiblings.map((sibling) => {
-                const siblingLangInfo = getLanguageInfo(sibling.language);
-                return (
-                  <Link
-                    key={sibling.id}
-                    href={`/blog/${sibling.slug}`}
-                    className="inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 transition-colors"
-                  >
-                    <span>{siblingLangInfo.flag}</span>
-                    <span>Read in {siblingLangInfo.nativeName}</span>
-                    <span className="text-xs">↗</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        )}
       </div>
 
       {/* 6. Separator */}

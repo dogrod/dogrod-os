@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import Image from "next/image";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -15,6 +16,7 @@ interface PostContentProps {
  * - Serif font (Lora) for body text
  * - Sans-serif for headings (hierarchy fix: markdown H1 renders as H2 visually)
  * - Dark theme syntax highlighting for code blocks
+ * - GFM support for tables, strikethrough, etc.
  */
 export function PostContent({ content }: PostContentProps) {
   // Custom components for markdown rendering
@@ -54,16 +56,16 @@ export function PostContent({ content }: PostContentProps) {
 
     // Paragraphs use serif (Lora) - prose-lg size
     p: ({ children }) => (
-      <p className="text-lg leading-[1.8] text-zinc-800 mb-6 font-serif">
+      <p className="text-lg leading-[1.8] text-zinc-700 mb-6 font-serif">
         {children}
       </p>
     ),
 
-    // Links
+    // Links - Clear affordance without jarring blue
     a: ({ href, children }) => (
       <a
         href={href}
-        className="text-zinc-900 underline underline-offset-4 decoration-zinc-400 hover:decoration-zinc-900 transition-colors font-serif"
+        className="text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-900 transition-colors"
         target={href?.startsWith("http") ? "_blank" : undefined}
         rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
       >
@@ -73,20 +75,20 @@ export function PostContent({ content }: PostContentProps) {
 
     // Lists
     ul: ({ children }) => (
-      <ul className="list-disc list-outside pl-6 mb-6 space-y-2 font-serif text-lg text-zinc-800">
+      <ul className="list-disc list-outside pl-6 mb-6 space-y-2 font-serif text-lg text-zinc-700">
         {children}
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-outside pl-6 mb-6 space-y-2 font-serif text-lg text-zinc-800">
+      <ol className="list-decimal list-outside pl-6 mb-6 space-y-2 font-serif text-lg text-zinc-700">
         {children}
       </ol>
     ),
     li: ({ children }) => <li className="leading-[1.8]">{children}</li>,
 
-    // Blockquotes - editorial style
+    // Blockquotes - Distinct with solid left border
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-zinc-300 pl-6 py-2 my-8 text-zinc-600 italic font-serif text-xl">
+      <blockquote className="border-l-4 border-zinc-200 pl-4 my-6 text-zinc-600 italic font-serif text-lg">
         {children}
       </blockquote>
     ),
@@ -128,10 +130,10 @@ export function PostContent({ content }: PostContentProps) {
 
     // Horizontal rule
     hr: () => (
-      <hr className="my-12 border-0 h-px bg-gradient-to-r from-transparent via-zinc-300 to-transparent" />
+      <hr className="my-12 border-0 h-px bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
     ),
 
-    // Images - use Next.js Image component for optimization
+    // Images - Rounded with subtle shadow to match cover image aesthetic
     img: ({ src, alt }) => {
       if (!src || typeof src !== "string") return null;
 
@@ -144,7 +146,7 @@ export function PostContent({ content }: PostContentProps) {
               alt={alt || ""}
               width={680}
               height={400}
-              className="rounded-lg w-full h-auto"
+              className="rounded-md shadow-sm w-full h-auto"
               unoptimized
             />
             {alt && (
@@ -163,7 +165,7 @@ export function PostContent({ content }: PostContentProps) {
             alt={alt || ""}
             width={680}
             height={400}
-            className="rounded-lg w-full h-auto"
+            className="rounded-md shadow-sm w-full h-auto"
           />
           {alt && (
             <figcaption className="text-center text-sm text-zinc-500 mt-3 font-sans">
@@ -180,34 +182,43 @@ export function PostContent({ content }: PostContentProps) {
     ),
     em: ({ children }) => <em className="italic">{children}</em>,
 
-    // Tables
+    // Strikethrough (GFM)
+    del: ({ children }) => (
+      <del className="text-zinc-500 line-through">{children}</del>
+    ),
+
+    // Tables - Clean, minimal borders, lots of breathing room
     table: ({ children }) => (
       <div className="my-8 overflow-x-auto">
-        <table className="w-full border-collapse text-base font-sans">
+        <table className="w-full text-sm border-collapse font-sans">
           {children}
         </table>
       </div>
     ),
     thead: ({ children }) => (
-      <thead className="border-b-2 border-zinc-200">{children}</thead>
+      <thead className="bg-zinc-50/50 border-b border-zinc-200">
+        {children}
+      </thead>
     ),
     tbody: ({ children }) => <tbody>{children}</tbody>,
-    tr: ({ children }) => (
-      <tr className="border-b border-zinc-100">{children}</tr>
-    ),
+    tr: ({ children }) => <tr className="border-b border-zinc-100">{children}</tr>,
     th: ({ children }) => (
-      <th className="text-left py-3 px-4 font-semibold text-zinc-900">
+      <th className="py-3 px-4 text-left font-medium text-zinc-500 border-b border-zinc-200">
         {children}
       </th>
     ),
     td: ({ children }) => (
-      <td className="py-3 px-4 text-zinc-700">{children}</td>
+      <td className="py-3 px-4 text-zinc-700 border-b border-zinc-100">
+        {children}
+      </td>
     ),
   };
 
   return (
     <article className="prose-blog">
-      <ReactMarkdown components={components}>{content}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {content}
+      </ReactMarkdown>
     </article>
   );
 }
