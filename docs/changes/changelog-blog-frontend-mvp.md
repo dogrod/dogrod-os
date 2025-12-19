@@ -252,8 +252,68 @@ LIMIT 1
 
 ---
 
+## Multi-language Support (v1.2)
+
+### Overview
+
+Added i18n support for blog posts with smart deduplication and language switching.
+
+### Database Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `language` | `Language` | Post language (`zh-CN` or `en`) |
+| `translation_group_id` | `uuid` | Groups translations of the same content |
+
+### Blog Index Deduplication
+
+Posts are grouped by `translation_group_id` to avoid duplicates:
+
+| Scenario | Display Behavior |
+|----------|-----------------|
+| Has ZH & EN | Show ZH post + "🇺🇸 English available" badge |
+| ZH only | Show ZH post (no badge) |
+| EN only | Show EN post + "🇺🇸 English Only" badge |
+
+**Implementation**: `groupPostsByTranslation()` function in `lib/blog/types.ts`
+
+### Detail Page Language Switcher
+
+When viewing a post with translations:
+- Shows current language with flag: "🇨🇳 中文"
+- Links to sibling translations: "🇺🇸 Read in English ↗"
+- Located in metadata area next to date
+
+### New Types
+
+```typescript
+type Language = "zh-CN" | "en";
+
+interface TranslationSibling {
+  id: string;
+  slug: string;
+  title: string;
+  language: Language;
+}
+
+interface PostGroup {
+  post: PostWithCover;
+  availableLanguages: Language[];
+  isPreferredLanguage: boolean;
+}
+```
+
+### Query Updates
+
+- `getAllBlogPosts()`: Fetches all posts (no pagination) for complete grouping
+- `getPostBySlug()`: Now fetches sibling translations via `translation_group_id`
+- Added `fetchSiblingTranslations()` helper function
+
+---
+
 ## Future Enhancements
 
+- [x] Multi-language support (i18n)
 - [ ] MDX support for rich content
 - [ ] Reading time estimation
 - [ ] Related posts section

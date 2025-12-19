@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getBlogPosts } from "@/lib/blog";
+import { getAllBlogPosts, groupPostsByTranslation } from "@/lib/blog";
 import { PostCard } from "./_components/PostCard";
 
 export const metadata: Metadata = {
@@ -8,10 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
-  const { posts } = await getBlogPosts();
+  // Fetch all posts and group by translation
+  const posts = await getAllBlogPosts();
+  const postGroups = groupPostsByTranslation(posts);
 
   // Show placeholder if no posts
-  if (posts.length === 0) {
+  if (postGroups.length === 0) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-6">
         <div className="max-w-3xl text-center">
@@ -39,10 +41,10 @@ export default async function BlogPage() {
         </p>
       </header>
 
-      {/* Post List */}
+      {/* Post List - Grouped by translation, deduplicated */}
       <div className="divide-y divide-zinc-100">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
+        {postGroups.map((group) => (
+          <PostCard key={group.post.id} group={group} />
         ))}
       </div>
     </div>

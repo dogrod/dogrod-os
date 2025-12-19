@@ -1,12 +1,14 @@
 "use client";
 
-import { Camera } from "lucide-react";
+import Link from "next/link";
+import { Camera, Globe } from "lucide-react";
 import { BlurhashImage } from "@/app/gallery/_components/BlurhashImage";
 import type { PostWithDetails } from "@/lib/blog/types";
 import {
   getAssetRenditionUrl,
   formatPublishedDate,
   getCameraInfoString,
+  LANGUAGES,
 } from "@/lib/blog/types";
 
 interface PostHeroProps {
@@ -15,7 +17,7 @@ interface PostHeroProps {
 
 /**
  * Hero section for blog detail page
- * Medium-style layout: Image → EXIF → Title → Excerpt → Meta
+ * Medium-style layout: Image → EXIF → Title → Excerpt → Meta → Language Switcher
  * All elements aligned to same max-width for visual consistency
  */
 export function PostHero({ post }: PostHeroProps) {
@@ -31,6 +33,10 @@ export function PostHero({ post }: PostHeroProps) {
   const cameraInfo = post.photos?.photo_exif
     ? getCameraInfoString(post.photos.photo_exif)
     : null;
+
+  // Get sibling translations
+  const hasSiblings = post.siblings && post.siblings.length > 0;
+  const currentLangInfo = LANGUAGES[post.language];
 
   return (
     <header className="mb-10">
@@ -73,11 +79,39 @@ export function PostHero({ post }: PostHeroProps) {
         </p>
       )}
 
-      {/* 5. Metadata (Date) */}
-      <div className="flex items-center gap-3 text-sm text-zinc-400 font-sans">
+      {/* 5. Metadata (Date + Language Switcher) */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400 font-sans">
         <time dateTime={post.published_at || undefined}>
           {formatPublishedDate(post.published_at)}
         </time>
+
+        {/* Language Switcher */}
+        {hasSiblings && (
+          <>
+            <span className="text-zinc-300">·</span>
+            <div className="flex items-center gap-2">
+              <Globe className="w-3.5 h-3.5" />
+              <span className="text-zinc-500">
+                {currentLangInfo.flag} {currentLangInfo.nativeName}
+              </span>
+              <span className="text-zinc-300">|</span>
+              {post.siblings.map((sibling) => {
+                const siblingLangInfo = LANGUAGES[sibling.language];
+                return (
+                  <Link
+                    key={sibling.id}
+                    href={`/blog/${sibling.slug}`}
+                    className="inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 transition-colors"
+                  >
+                    <span>{siblingLangInfo.flag}</span>
+                    <span>Read in {siblingLangInfo.nativeName}</span>
+                    <span className="text-xs">↗</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* 6. Separator */}

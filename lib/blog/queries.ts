@@ -7,6 +7,8 @@ import type {
   PostWithDetails,
   BlogPostsResponse,
   PhotoWithExif,
+  TranslationSibling,
+  Language,
 } from "./types";
 import type { Asset, PhotoExif } from "@/lib/gallery/types";
 
@@ -37,7 +39,7 @@ function normalizePost(raw: RawPostResponse): PostWithCover {
 
 /**
  * Fetch published posts for the blog index page
- * Returns posts with their cover assets, sorted by published_at DESC
+ * Returns ALL posts with their cover assets (for client-side grouping by translation)
  */
 export async function getBlogPosts(
   cursor?: string,
@@ -45,13 +47,14 @@ export async function getBlogPosts(
 ): Promise<BlogPostsResponse> {
   const supabase = await createSupabaseServerClient();
 
-  // Build the query
+  // Build the query - include language and translation_group_id
   let query = supabase
     .from("posts")
     .select(
       `
       id, title, slug, excerpt, published_at, created_at, updated_at,
       status, visibility, cover_asset_id, gallery_photo_id, content,
+      language, translation_group_id,
       assets:cover_asset_id (
         id,
         blurhash,
@@ -104,6 +107,79 @@ export async function getBlogPosts(
 }
 
 /**
+ * Fetch ALL published posts (no pagination) for grouping
+ * Used when we need complete translation groups
+ */
+export async function getAllBlogPosts(): Promise<PostWithCover[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      id, title, slug, excerpt, published_at, created_at, updated_at,
+      status, visibility, cover_asset_id, gallery_photo_id, content,
+      language, translation_group_id,
+      assets:cover_asset_id (
+        id,
+        blurhash,
+        dominant_color,
+        asset_rendition (
+          url,
+          variant_name,
+          width,
+          height
+        )
+      )
+    `
+    )
+    .eq("status", PUBLIC_POST_CONDITIONS.status)
+    .eq("visibility", PUBLIC_POST_CONDITIONS.visibility)
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all blog posts:", error);
+    throw new Error("Failed to fetch blog posts");
+  }
+
+  return (data || []).map((raw) =>
+    normalizePost(raw as unknown as RawPostResponse)
+  );
+}
+
+/**
+ * Fetch sibling translations for a post
+ */
+async function fetchSiblingTranslations(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  postId: string,
+  translationGroupId: string | null
+): Promise<TranslationSibling[]> {
+  if (!translationGroupId) return [];
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("id, slug, title, language")
+    .eq("translation_group_id", translationGroupId)
+    .eq("status", PUBLIC_POST_CONDITIONS.status)
+    .eq("visibility", PUBLIC_POST_CONDITIONS.visibility)
+    .neq("id", postId);
+
+  if (error) {
+    console.error("Error fetching sibling translations:", error);
+    return [];
+  }
+
+  return (data || []).map((sibling) => ({
+    id: sibling.id,
+    slug: sibling.slug,
+    title: sibling.title,
+    language: sibling.language as Language,
+  }));
+}
+
+/**
  * Fetch a single post by slug with all details
  */
 export async function getPostBySlug(
@@ -111,7 +187,7 @@ export async function getPostBySlug(
 ): Promise<PostWithDetails | null> {
   const supabase = await createSupabaseServerClient();
 
-  // First, fetch the post with cover asset
+  // Fetch the post with cover asset
   const { data: post, error: postError } = await supabase
     .from("posts")
     .select(
@@ -155,6 +231,13 @@ export async function getPostBySlug(
     assets: Asset | null;
   };
 
+  // Fetch sibling translations
+  const siblings = await fetchSiblingTranslations(
+    supabase,
+    postData.id,
+    postData.translation_group_id
+  );
+
   // If there's a gallery_photo_id, fetch the photo with EXIF data
   let photoWithExif: PhotoWithExif | null = null;
 
@@ -185,6 +268,7 @@ export async function getPostBySlug(
     ...postData,
     assets: postData.assets || null,
     photos: photoWithExif,
+    siblings,
   };
 }
 
