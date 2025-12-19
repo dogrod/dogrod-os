@@ -1,10 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@heroui/react";
 import { usePhotoContext } from "./PhotoContext";
 import { trackPhotoDownload } from "@/lib/analytics";
+import { BrandNav } from "@/components/nav";
 
 export function GalleryHeader() {
   const pathname = usePathname();
@@ -13,16 +13,6 @@ export function GalleryHeader() {
 
   // Detect if we're on a detail page (has photoId in path)
   const isDetailPage = pathname !== "/gallery" && pathname.startsWith("/gallery/");
-
-  const handleLogoClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isDetailPage) {
-      // On detail page, navigate to gallery list
-      e.preventDefault();
-      router.push("/gallery");
-    }
-    // On list page, do nothing (keeps state)
-  };
 
   const handleClose = () => {
     router.push("/gallery");
@@ -61,16 +51,8 @@ export function GalleryHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] h-16 bg-zinc-50 min-[1800px]:bg-transparent dark:bg-zinc-950 dark:min-[1800px]:bg-transparent">
       <div className="flex h-full items-center justify-between px-6">
-        {/* Left: Logo/Title */}
-        <Link
-          href="/gallery"
-          onClick={handleLogoClick}
-          className="flex items-center gap-3 text-xl font-semibold tracking-tight text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
-        >
-          <span className="text-zinc-400 dark:text-zinc-500">dogrodOS</span>
-          <span className="text-zinc-300 dark:text-zinc-600">|</span>
-          <span>Gallery</span>
-        </Link>
+        {/* Breadcrumb Brand Navigation */}
+        <BrandNav moduleName="Gallery" moduleHref="/gallery" />
 
         {/* Right: Download & Close buttons on detail page */}
         <div className="flex items-center gap-1">
