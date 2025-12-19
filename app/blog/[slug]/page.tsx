@@ -69,27 +69,22 @@ export default async function BlogPostPage({ params }: PageProps) {
   }
 
   return (
-    <div className="py-12">
-      {/* Hero Section */}
-      <PostHero post={post} />
+    <div className="py-8 sm:py-12">
+      {/* Single centered container for perfect edge alignment */}
+      <div className="mx-auto max-w-[680px] px-4 sm:px-6">
+        {/* Hero Section (Image → EXIF → Title → Excerpt → Meta) */}
+        <PostHero post={post} />
 
-      {/* Content */}
-      {post.content && <PostContent content={post.content} />}
+        {/* Main Content */}
+        {post.content && <PostContent content={post.content} />}
 
-      {/* Footer */}
-      <footer className="mx-auto max-w-[680px] px-6 mt-16 pt-8 border-t border-zinc-200">
-        <p className="text-sm text-zinc-500">
-          Thanks for reading. Published on{" "}
-          {post.published_at
-            ? new Date(post.published_at).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            : "Unknown date"}
-          .
-        </p>
-      </footer>
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-zinc-200">
+          <p className="text-sm text-zinc-400">
+            Thanks for reading.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }

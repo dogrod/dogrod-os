@@ -15,11 +15,11 @@ interface PostHeroProps {
 
 /**
  * Hero section for blog detail page
- * Shows title, date, cover image, and optional camera info badge
+ * Medium-style layout: Image → EXIF → Title → Excerpt → Meta
+ * All elements aligned to same max-width for visual consistency
  */
 export function PostHero({ post }: PostHeroProps) {
-  // Request "detail" variant first (commonly used for detail pages),
-  // with "large" as fallback. The function will also try xl, og_card, etc.
+  // Request "detail" variant first, with smart fallback chain
   const coverUrl = getAssetRenditionUrl(
     post.assets?.asset_rendition,
     "detail",
@@ -33,57 +33,55 @@ export function PostHero({ post }: PostHeroProps) {
     : null;
 
   return (
-    <header className="mb-12">
-      {/* Title and Meta */}
-      <div className="mx-auto max-w-[680px] px-6 mb-8">
-        {/* Date */}
-        <time
-          dateTime={post.published_at || undefined}
-          className="block text-sm text-zinc-400 mb-4 font-sans tracking-wide uppercase"
-        >
-          {formatPublishedDate(post.published_at)}
-        </time>
-
-        {/* Title - Sans-serif, bold, larger */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900 leading-[1.15] font-sans">
-          {post.title}
-        </h1>
-
-        {/* Excerpt as lead - Serif, italic, muted, distinct from body */}
-        {post.excerpt && (
-          <p className="mt-6 mb-8 text-xl sm:text-2xl text-zinc-500 leading-relaxed font-serif italic">
-            {post.excerpt}
-          </p>
-        )}
-      </div>
-
-      {/* Cover Image */}
+    <header className="mb-10">
+      {/* 1. Cover Image (Top) - Aligned to content width */}
       {coverUrl && (
-        <div className="relative w-full max-w-4xl mx-auto px-6">
-          <div className="rounded-xl overflow-hidden bg-zinc-100 shadow-sm">
+        <div className="mb-6">
+          {/* Height-constrained image for fold optimization */}
+          <div className="relative rounded-lg overflow-hidden bg-zinc-100 max-h-[400px]">
             <BlurhashImage
               src={coverUrl}
               alt={post.title}
-              width={1200}
-              height={675}
+              width={680}
+              height={400}
               blurhash={blurhash}
-              className="w-full"
+              className="w-full h-full object-cover"
               priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 90vw, 896px"
+              sizes="(max-width: 680px) 100vw, 680px"
             />
           </div>
 
-          {/* Camera Info Badge (if linked to gallery photo) */}
+          {/* 2. EXIF Info - Caption style, de-emphasized */}
           {cameraInfo && (
-            <div className="flex justify-center mt-4">
-              <span className="inline-flex items-center gap-1.5 bg-zinc-100 text-zinc-600 text-xs font-medium px-3 py-1.5 rounded-full font-sans">
-                <Camera className="w-3.5 h-3.5" />
-                <span>Shot on {cameraInfo}</span>
-              </span>
-            </div>
+            <p className="flex items-center justify-center gap-1.5 text-xs text-zinc-400 mt-2 font-sans">
+              <Camera className="w-3 h-3" />
+              <span>Shot on {cameraInfo}</span>
+            </p>
           )}
         </div>
       )}
+
+      {/* 3. Title (H1) */}
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-zinc-900 leading-[1.2] font-sans">
+        {post.title}
+      </h1>
+
+      {/* 4. Excerpt - Subtitle style */}
+      {post.excerpt && (
+        <p className="mt-4 mb-6 text-lg sm:text-xl text-zinc-500 leading-relaxed font-serif">
+          {post.excerpt}
+        </p>
+      )}
+
+      {/* 5. Metadata (Date) */}
+      <div className="flex items-center gap-3 text-sm text-zinc-400 font-sans">
+        <time dateTime={post.published_at || undefined}>
+          {formatPublishedDate(post.published_at)}
+        </time>
+      </div>
+
+      {/* 6. Separator */}
+      <div className="mt-8 border-b border-zinc-200" />
     </header>
   );
 }

@@ -206,10 +206,8 @@ export function PostContent({ content }: PostContentProps) {
   };
 
   return (
-    <article className="mx-auto max-w-[680px] px-6">
-      <div className="prose-blog">
-        <ReactMarkdown components={components}>{content}</ReactMarkdown>
-      </div>
+    <article className="prose-blog">
+      <ReactMarkdown components={components}>{content}</ReactMarkdown>
     </article>
   );
 }
