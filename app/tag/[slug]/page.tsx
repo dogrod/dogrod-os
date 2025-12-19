@@ -73,21 +73,11 @@ export default async function TagPage({ params }: PageProps) {
 
       {/* Main Content */}
       <main className="pt-16">
-        {/* Hero Section */}
-        <section
-          className="py-16 px-6"
-          style={{
-            background: tag.color
-              ? `linear-gradient(to bottom, ${tag.color}08, transparent)`
-              : undefined,
-          }}
-        >
+        {/* Hero Section - Monochrome style */}
+        <section className="py-16 px-6">
           <div className="mx-auto max-w-[680px]">
-            {/* Tag Name */}
-            <h1
-              className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight"
-              style={{ color: tag.color || "#18181b" }}
-            >
+            {/* Tag Name - Monochrome */}
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight text-zinc-900">
               # {tag.name}
             </h1>
 

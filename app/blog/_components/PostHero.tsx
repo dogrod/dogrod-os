@@ -88,7 +88,7 @@ export function PostHero({ post }: PostHeroProps) {
           {formatPublishedDate(post.published_at)}
         </time>
 
-        {/* Inline Tags */}
+        {/* Inline Tags - Monochrome style */}
         {hasTags && (
           <>
             <span className="text-zinc-300">·</span>
@@ -97,8 +97,7 @@ export function PostHero({ post }: PostHeroProps) {
                 <Link
                   key={tag.id}
                   href={`/tag/${tag.slug}`}
-                  className="font-medium hover:underline underline-offset-4 transition-colors"
-                  style={{ color: tag.color || "rgb(113 113 122)" }}
+                  className="font-medium text-zinc-500 hover:text-zinc-900 hover:underline underline-offset-4 transition-colors duration-200"
                 >
                   #{tag.name}
                 </Link>
