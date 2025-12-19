@@ -1,6 +1,7 @@
 "use client";
 
-import { Camera } from "lucide-react";
+import Link from "next/link";
+import { Camera, ArrowUpRight } from "lucide-react";
 import { BlurhashImage } from "@/app/gallery/_components/BlurhashImage";
 import type { PostWithDetails } from "@/lib/blog/types";
 import {
@@ -8,7 +9,6 @@ import {
   formatPublishedDate,
   getCameraInfoString,
 } from "@/lib/blog/types";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 
 interface PostHeroProps {
   post: PostWithDetails;
@@ -17,7 +17,7 @@ interface PostHeroProps {
 /**
  * Hero section for blog detail page
  * Medium-style layout: Image → EXIF → Title → Excerpt → Meta
- * Language switcher positioned in top-right corner
+ * Language switcher integrated inline with metadata
  */
 export function PostHero({ post }: PostHeroProps) {
   // Request "detail" variant first, with smart fallback chain
@@ -33,19 +33,22 @@ export function PostHero({ post }: PostHeroProps) {
     ? getCameraInfoString(post.photos.photo_exif)
     : null;
 
-  // Check for translations
-  const hasSiblings = post.siblings && post.siblings.length > 0;
+  // Get first valid sibling translation
+  const siblingPost = post.siblings?.find((s) => s.language != null) || null;
+  const hasSibling = siblingPost !== null;
+
+  // Get translation link text based on current language
+  const getTranslationText = () => {
+    if (!siblingPost) return "";
+    // If current is Chinese, offer English; if English, offer Chinese
+    if (post.language === "zh-CN") {
+      return "Read in English";
+    }
+    return "阅读中文版";
+  };
 
   return (
-    <header className="relative mb-10">
-      {/* Ghost Language Switcher - Top Right */}
-      {hasSiblings && (
-        <LanguageSwitcher
-          currentLanguage={post.language}
-          siblings={post.siblings}
-        />
-      )}
-
+    <header className="mb-10">
       {/* 1. Cover Image (Top) - Aligned to content width */}
       {coverUrl && (
         <div className="mb-6">
@@ -85,11 +88,25 @@ export function PostHero({ post }: PostHeroProps) {
         </p>
       )}
 
-      {/* 5. Metadata (Date) */}
-      <div className="text-sm text-zinc-400 font-sans">
+      {/* 5. Metadata Row (Date + Language Switcher) */}
+      <div className="flex items-center gap-3 text-sm text-zinc-400 font-sans">
         <time dateTime={post.published_at || undefined}>
           {formatPublishedDate(post.published_at)}
         </time>
+
+        {/* Language Switcher - Only if translation exists */}
+        {hasSibling && siblingPost && (
+          <>
+            <span className="text-zinc-300">·</span>
+            <Link
+              href={`/blog/${siblingPost.slug}`}
+              className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-900 hover:underline underline-offset-4 transition-colors"
+            >
+              <span>{getTranslationText()}</span>
+              <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </>
+        )}
       </div>
 
       {/* 6. Separator */}
