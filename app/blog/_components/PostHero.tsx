@@ -8,7 +8,7 @@ import {
   getAssetRenditionUrl,
   formatPublishedDate,
   getCameraInfoString,
-  LANGUAGES,
+  getLanguageInfo,
 } from "@/lib/blog/types";
 
 interface PostHeroProps {
@@ -34,9 +34,10 @@ export function PostHero({ post }: PostHeroProps) {
     ? getCameraInfoString(post.photos.photo_exif)
     : null;
 
-  // Get sibling translations
-  const hasSiblings = post.siblings && post.siblings.length > 0;
-  const currentLangInfo = LANGUAGES[post.language];
+  // Get sibling translations (filter out siblings with no valid language)
+  const validSiblings = post.siblings?.filter((s) => s.language != null) || [];
+  const hasSiblings = validSiblings.length > 0;
+  const currentLangInfo = getLanguageInfo(post.language);
 
   return (
     <header className="mb-10">
@@ -86,7 +87,7 @@ export function PostHero({ post }: PostHeroProps) {
         </time>
 
         {/* Language Switcher */}
-        {hasSiblings && (
+        {hasSiblings && post.language && (
           <>
             <span className="text-zinc-300">·</span>
             <div className="flex items-center gap-2">
@@ -95,8 +96,8 @@ export function PostHero({ post }: PostHeroProps) {
                 {currentLangInfo.flag} {currentLangInfo.nativeName}
               </span>
               <span className="text-zinc-300">|</span>
-              {post.siblings.map((sibling) => {
-                const siblingLangInfo = LANGUAGES[sibling.language];
+              {validSiblings.map((sibling) => {
+                const siblingLangInfo = getLanguageInfo(sibling.language);
                 return (
                   <Link
                     key={sibling.id}

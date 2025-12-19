@@ -38,7 +38,7 @@ export interface Post {
   content: string | null; // Markdown content
   cover_asset_id: string | null;
   gallery_photo_id: string | null;
-  language: Language;
+  language: Language | null; // May be null in database
   translation_group_id: string | null;
   status: ContentStatus;
   visibility: Visibility;
@@ -61,7 +61,7 @@ export interface TranslationSibling {
   id: string;
   slug: string;
   title: string;
-  language: Language;
+  language: Language | null;
 }
 
 /**
@@ -87,8 +87,8 @@ export interface PostWithDetails extends Post {
 export interface PostGroup {
   /** The post to display (in preferred language) */
   post: PostWithCover;
-  /** Available languages in this translation group */
-  availableLanguages: Language[];
+  /** Available languages in this translation group (excludes null) */
+  availableLanguages: (Language | null)[];
   /** Whether the displayed post is in the preferred language */
   isPreferredLanguage: boolean;
 }
@@ -262,6 +262,16 @@ export function groupPostsByTranslation(
 /**
  * Get language display info
  */
-export function getLanguageInfo(lang: Language) {
-  return LANGUAGES[lang] || LANGUAGES["en"];
+export function getLanguageInfo(lang: Language | null | undefined) {
+  if (!lang || !(lang in LANGUAGES)) {
+    return LANGUAGES["en"]; // Default fallback
+  }
+  return LANGUAGES[lang];
+}
+
+/**
+ * Check if a value is a valid Language
+ */
+export function isValidLanguage(lang: unknown): lang is Language {
+  return typeof lang === "string" && lang in LANGUAGES;
 }

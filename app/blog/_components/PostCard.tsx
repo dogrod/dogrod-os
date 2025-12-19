@@ -17,25 +17,39 @@ interface PostCardProps {
  * Get badge info for available translations
  */
 function getTranslationBadge(
-  availableLanguages: Language[],
-  displayedLanguage: Language,
+  availableLanguages: (Language | null)[],
+  displayedLanguage: Language | null | undefined,
   isPreferredLanguage: boolean
 ): { text: string; flag: string } | null {
+  // Filter out null/undefined languages
+  const validLanguages = availableLanguages.filter(
+    (lang): lang is Language => lang != null && lang in LANGUAGES
+  );
+
+  // If no valid languages or displayed language is invalid, skip badge
+  if (validLanguages.length === 0 || !displayedLanguage || !(displayedLanguage in LANGUAGES)) {
+    return null;
+  }
+
   // If only one language, check if it's not the preferred one
-  if (availableLanguages.length === 1) {
+  if (validLanguages.length === 1) {
     if (!isPreferredLanguage) {
       const langInfo = LANGUAGES[displayedLanguage];
-      return { text: `${langInfo.name} Only`, flag: langInfo.flag };
+      if (langInfo) {
+        return { text: `${langInfo.name} Only`, flag: langInfo.flag };
+      }
     }
     return null;
   }
 
   // Multiple languages available - show the other language(s)
-  const otherLanguages = availableLanguages.filter((lang) => lang !== displayedLanguage);
+  const otherLanguages = validLanguages.filter((lang) => lang !== displayedLanguage);
   if (otherLanguages.length > 0) {
     const otherLang = otherLanguages[0];
     const langInfo = LANGUAGES[otherLang];
-    return { text: `${langInfo.nativeName} available`, flag: langInfo.flag };
+    if (langInfo) {
+      return { text: `${langInfo.nativeName} available`, flag: langInfo.flag };
+    }
   }
 
   return null;

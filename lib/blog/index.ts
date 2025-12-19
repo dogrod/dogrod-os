@@ -29,6 +29,7 @@ export {
   getCameraInfoString,
   groupPostsByTranslation,
   getLanguageInfo,
+  isValidLanguage,
 } from "./types";
 
 // Queries
