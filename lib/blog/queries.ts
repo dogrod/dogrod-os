@@ -264,11 +264,26 @@ export async function getPostBySlug(
     }
   }
 
+  // Fetch tags for this post
+  const { data: tagData } = await supabase
+    .from("post_tag")
+    .select(`
+      tags:tag_id (
+        id, name, slug, color
+      )
+    `)
+    .eq("post_id", postData.id);
+
+  const tags = (tagData || [])
+    .map((item) => item.tags as unknown as { id: string; name: string; slug: string; color: string | null })
+    .filter((tag): tag is { id: string; name: string; slug: string; color: string | null } => tag !== null);
+
   return {
     ...postData,
     assets: postData.assets || null,
     photos: photoWithExif,
     siblings,
+    tags,
   };
 }
 

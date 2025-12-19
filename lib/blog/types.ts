@@ -4,6 +4,7 @@
  */
 
 import type { Asset, AssetRendition, PhotoExif } from "@/lib/gallery/types";
+import type { TagInfo } from "@/lib/tags/types";
 
 // Database enum types (shared with other modules)
 export type ContentStatus = "draft" | "scheduled" | "published" | "archived";
@@ -79,6 +80,7 @@ export interface PostWithDetails extends Post {
   assets: Asset | null;
   photos: PhotoWithExif | null;
   siblings: TranslationSibling[];
+  tags: TagInfo[];
 }
 
 /**

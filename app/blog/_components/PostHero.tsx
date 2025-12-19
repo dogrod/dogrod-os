@@ -16,7 +16,7 @@ interface PostHeroProps {
 
 /**
  * Hero section for blog detail page
- * Medium-style layout: Image → Title → Excerpt → Meta
+ * Medium-style layout: Image → Title → Excerpt → Meta (with tags)
  * EXIF info shown as ghost overlay on image hover
  * Language switcher integrated inline with metadata
  */
@@ -32,6 +32,9 @@ export function PostHero({ post }: PostHeroProps) {
   // Get first valid sibling translation
   const siblingPost = post.siblings?.find((s) => s.language != null) || null;
   const hasSibling = siblingPost !== null;
+
+  // Check for tags
+  const hasTags = post.tags && post.tags.length > 0;
 
   // Get translation link text based on current language
   const getTranslationText = () => {
@@ -79,11 +82,30 @@ export function PostHero({ post }: PostHeroProps) {
         </p>
       )}
 
-      {/* 4. Metadata Row (Date + Language Switcher) */}
-      <div className="flex items-center gap-3 text-sm text-zinc-400 font-sans">
+      {/* 4. Metadata Row (Date + Tags + Language Switcher) */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-zinc-400 font-sans">
         <time dateTime={post.published_at || undefined}>
           {formatPublishedDate(post.published_at)}
         </time>
+
+        {/* Inline Tags */}
+        {hasTags && (
+          <>
+            <span className="text-zinc-300">·</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {post.tags.map((tag) => (
+                <Link
+                  key={tag.id}
+                  href={`/tag/${tag.slug}`}
+                  className="font-medium hover:underline underline-offset-4 transition-colors"
+                  style={{ color: tag.color || "rgb(113 113 122)" }}
+                >
+                  #{tag.name}
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Language Switcher - Only if translation exists */}
         {hasSibling && siblingPost && (

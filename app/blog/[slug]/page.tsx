@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPostBySlug, getAssetRenditionUrl } from "@/lib/blog";
 import { PostHero } from "../_components/PostHero";
 import { PostContent } from "../_components/PostContent";
+import { TagList } from "@/components/blog";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -68,6 +69,8 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  const hasTags = post.tags && post.tags.length > 0;
+
   return (
     <div className="py-8 sm:py-12">
       {/* Single centered container for perfect edge alignment */}
@@ -78,8 +81,18 @@ export default async function BlogPostPage({ params }: PageProps) {
         {/* Main Content */}
         {post.content && <PostContent content={post.content} />}
 
+        {/* Topics Section (Tag Pills) */}
+        {hasTags && (
+          <section className="mt-12 pt-8 border-t border-zinc-100">
+            <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wide mb-4">
+              Topics
+            </h2>
+            <TagList tags={post.tags} variant="pills" />
+          </section>
+        )}
+
         {/* Footer */}
-        <footer className="mt-16 pt-8 border-t border-zinc-200">
+        <footer className="mt-12 pt-8 border-t border-zinc-200">
           <p className="text-sm text-zinc-400">
             Thanks for reading.
           </p>
