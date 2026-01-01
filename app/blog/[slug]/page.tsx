@@ -30,14 +30,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   );
 
   const title = `${post.title} | dogrodOS`;
-  const description = post.excerpt || "A blog post from Brian";
+  // Use excerpt or generate contextual fallback; truncate to 200 chars for X compliance
+  const rawDescription = post.excerpt || `Read "${post.title}" on dogrodOS`;
+  const description = rawDescription.length > 200 
+    ? rawDescription.slice(0, 197) + "..." 
+    : rawDescription;
+  const canonicalUrl = `/blog/${slug}`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: post.title,
       description,
+      url: canonicalUrl,
       type: "article",
       publishedTime: post.published_at || undefined,
       authors: ["Brian"],

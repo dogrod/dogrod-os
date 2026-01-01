@@ -21,6 +21,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://dogrod.com"),
   title: "dogrodOS",
   description: "A personal OS-style web application",
   icons: {
