@@ -107,7 +107,6 @@ export function HomeHeader() {
     { label: "X (Twitter)", href: SOCIAL_LINKS.x },
     { label: "Instagram", href: SOCIAL_LINKS.instagram },
     { label: "Unsplash", href: SOCIAL_LINKS.unsplash },
-    { label: "LinkedIn", href: SOCIAL_LINKS.linkedin },
   ];
 
   return (
