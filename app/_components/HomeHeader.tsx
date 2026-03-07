@@ -8,8 +8,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 const SOCIAL_LINKS = {
   x: "https://x.com/dogrod_",
   instagram: "https://www.instagram.com/dogrod_/",
-  unsplash: "https://unsplash.com/@dogrod",
-  linkedin: "https://www.linkedin.com/in/brianzhu7/"
+  unsplash: "https://unsplash.com/@dogrod"
 };
 
 interface DropdownItemProps {
