@@ -1,0 +1,323 @@
+# Blog Frontend MVP - Reading Experience
+
+**Date:** December 18, 2025
+
+This changelog documents the implementation of the Blog Reading Experience MVP, following Medium-style minimalist design principles.
+
+---
+
+## Overview
+
+The Blog module provides:
+- **Blog Index** (`/blog`): Lists published posts with thumbnails, dates, and excerpts
+- **Blog Detail** (`/blog/[slug]`): Full article view with hero image, metadata, and markdown content
+
+---
+
+## SEO Strategy
+
+### Dynamic Metadata Generation
+
+The blog detail page uses Next.js `generateMetadata` function to create dynamic OpenGraph and Twitter metadata:
+
+| Post Field | Meta Tag |
+|------------|----------|
+| `title` | `og:title`, `twitter:title` |
+| `excerpt` | `og:description`, `twitter:description` |
+| `cover_asset_id` → `asset_rendition` (variant: `og_card` or `large`) | `og:image`, `twitter:image` |
+
+### Implementation Pattern
+
+```typescript
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const post = await getPostBySlug(slug);
+  
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: [{ url: ogImageUrl }],
+      type: 'article',
+      publishedTime: post.published_at,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: [ogImageUrl],
+    },
+  };
+}
+```
+
+---
+
+## Design Tokens
+
+### Typography
+
+| Element | Font Family | Weight | Size |
+|---------|-------------|--------|------|
+| Article Body | Lora (Serif) | 400 | 18px (base) |
+| Headings (h1-h6) | Geist Sans (System) | 600-700 | Variable |
+| UI Elements | Geist Sans (System) | 400-600 | Variable |
+| Code | Geist Mono | 400 | 14px |
+
+**Rationale:** High-legibility Serif fonts (Lora) improve reading comprehension for long-form content while Sans-Serif headings maintain consistency with the OS aesthetic.
+
+### Layout Constraints
+
+| Property | Value | Purpose |
+|----------|-------|---------|
+| Content Max-Width | 680px | Optimal reading line length (60-75 characters) |
+| Container Padding | 24px | Consistent with gallery grid |
+| Paragraph Line-Height | 1.75 | Enhanced readability |
+| Paragraph Spacing | 1.5rem | Clear content separation |
+
+### Color Palette
+
+| Element | Light Mode |
+|---------|------------|
+| Body Text | `zinc-800` |
+| Headings | `zinc-900` |
+| Meta Text | `zinc-500` |
+| Links | `zinc-900` with underline |
+| Dividers | `zinc-200` |
+
+---
+
+## Integration Details
+
+### Blurhash Implementation
+
+All images use the `BlurhashImage` component from the gallery module:
+
+1. **Cover Image in List**: Thumbnail with blurhash placeholder
+2. **Hero Image in Detail**: Full-width cover with blurhash placeholder
+3. **Images in Markdown**: Standard `<img>` tags (future: custom MDX component)
+
+**Data Flow:**
+```
+posts.cover_asset_id → assets.blurhash → BlurhashImage component
+                     → asset_rendition.url (variant) → Image src
+```
+
+### Asset Rendition Variants Used
+
+| Context | Variant | Fallback |
+|---------|---------|----------|
+| List Thumbnail | `thumb` | `list` |
+| Hero Image | `large` | `xl` |
+| OG Image | `og_card` | `large` |
+
+### Gallery Photo Integration (Dual-Track Hero)
+
+When `gallery_photo_id` is present on a post:
+
+1. Fetch associated `photo` and `photo_exif` data
+2. Display "Shot on [Camera] [Lens]" info line below hero image
+3. Provides context for photography-focused blog posts
+
+---
+
+## Files Created/Modified
+
+### New Files
+
+| Path | Description |
+|------|-------------|
+| `lib/blog/types.ts` | Blog type definitions |
+| `lib/blog/queries.ts` | Supabase queries for posts |
+| `lib/blog/index.ts` | Module exports |
+| `app/blog/[slug]/page.tsx` | Blog detail page with generateMetadata |
+| `app/blog/_components/PostCard.tsx` | Post card for list view |
+| `app/blog/_components/PostContent.tsx` | Markdown renderer with styles |
+| `app/blog/_components/PostHero.tsx` | Hero section with cover image |
+
+### Modified Files
+
+| Path | Changes |
+|------|---------|
+| `app/layout.tsx` | Added Lora font configuration |
+| `app/blog/page.tsx` | Replaced placeholder with post list |
+| `app/blog/layout.tsx` | Updated metadata handling |
+
+---
+
+## Database Queries
+
+### Index Query
+
+```sql
+SELECT 
+  id, title, slug, excerpt, published_at,
+  assets (
+    id, blurhash,
+    asset_rendition (url, variant_name)
+  )
+FROM posts
+WHERE status = 'published' AND visibility = 'public'
+ORDER BY published_at DESC
+```
+
+### Detail Query
+
+```sql
+SELECT 
+  *,
+  assets (
+    id, blurhash, dominant_color,
+    asset_rendition (url, variant_name, width, height)
+  ),
+  photos!gallery_photo_id (
+    id,
+    photo_exif (camera_make, camera_model, lens_model)
+  )
+FROM posts
+WHERE slug = :slug AND status = 'published' AND visibility = 'public'
+LIMIT 1
+```
+
+---
+
+## Component Architecture
+
+```
+/blog
+├── page.tsx (Index - server component)
+├── layout.tsx (Shared layout with header)
+├── [slug]/
+│   └── page.tsx (Detail - server component with generateMetadata)
+└── _components/
+    ├── BlogHeader.tsx (Navigation header)
+    ├── PostCard.tsx (List item card)
+    ├── PostContent.tsx (Markdown renderer)
+    └── PostHero.tsx (Hero section with camera info)
+```
+
+---
+
+## Performance Considerations
+
+1. **Server Components**: All pages are server-rendered for optimal TTFB
+2. **Blurhash Placeholders**: Instant visual feedback during image load
+3. **Font Display**: `font-display: swap` for faster text rendering
+4. **Image Optimization**: Next.js Image component with appropriate sizes
+
+---
+
+## Visual Polish (v1.1)
+
+### Typography Overhaul
+- **Serif Body Text**: Lora font applied to paragraphs, lists, and blockquotes
+- **Sans-Serif Headings**: Maintains OS aesthetic contrast with body
+- **Heading Hierarchy Fix**: Markdown `#` (H1) renders as `<h2>` visually to not compete with page title
+
+### Excerpt Styling (Editorial Lead)
+- Larger size (`text-xl` / `text-2xl`)
+- Muted color (`text-zinc-500`)
+- Italic styling for editorial feel
+- Serif font (Lora) for consistency
+
+### Code Block Syntax Highlighting
+- **Library**: `react-syntax-highlighter` with Prism
+- **Theme**: VS Code Dark Plus (`vscDarkPlus`)
+- **Styling**: Rounded corners, proper overflow handling
+- **Inline Code**: Light gray background with subtle styling
+
+### EXIF Camera Badge
+- Capsule/pill styling with rounded-full
+- Camera icon from `lucide-react`
+- Gray background (`bg-zinc-100`)
+- Centered below cover image
+
+### Additional Improvements
+- Tables with proper styling
+- Figure captions for images
+- Gradient horizontal rules
+- Enhanced link styling with underline offset
+
+---
+
+## Dependencies Added
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `react-syntax-highlighter` | ^16.1.0 | Code block syntax highlighting |
+| `@types/react-syntax-highlighter` | ^15.5.13 | TypeScript definitions |
+| `lucide-react` | ^0.562.0 | Camera icon and future icons |
+| `@tailwindcss/typography` | ^0.5.19 | Prose styling utilities |
+
+---
+
+## Multi-language Support (v1.2)
+
+### Overview
+
+Added i18n support for blog posts with smart deduplication and language switching.
+
+### Database Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `language` | `Language` | Post language (`zh-CN` or `en`) |
+| `translation_group_id` | `uuid` | Groups translations of the same content |
+
+### Blog Index Deduplication
+
+Posts are grouped by `translation_group_id` to avoid duplicates:
+
+| Scenario | Display Behavior |
+|----------|-----------------|
+| Has ZH & EN | Show ZH post + "🇺🇸 English available" badge |
+| ZH only | Show ZH post (no badge) |
+| EN only | Show EN post + "🇺🇸 English Only" badge |
+
+**Implementation**: `groupPostsByTranslation()` function in `lib/blog/types.ts`
+
+### Detail Page Language Switcher
+
+When viewing a post with translations:
+- Shows current language with flag: "🇨🇳 中文"
+- Links to sibling translations: "🇺🇸 Read in English ↗"
+- Located in metadata area next to date
+
+### New Types
+
+```typescript
+type Language = "zh-CN" | "en";
+
+interface TranslationSibling {
+  id: string;
+  slug: string;
+  title: string;
+  language: Language;
+}
+
+interface PostGroup {
+  post: PostWithCover;
+  availableLanguages: Language[];
+  isPreferredLanguage: boolean;
+}
+```
+
+### Query Updates
+
+- `getAllBlogPosts()`: Fetches all posts (no pagination) for complete grouping
+- `getPostBySlug()`: Now fetches sibling translations via `translation_group_id`
+- Added `fetchSiblingTranslations()` helper function
+
+---
+
+## Future Enhancements
+
+- [x] Multi-language support (i18n)
+- [ ] MDX support for rich content
+- [ ] Reading time estimation
+- [ ] Related posts section
+- [ ] Social share buttons
+- [ ] Table of contents for long articles
+- [ ] Dark mode support
+
